@@ -55,7 +55,7 @@ class CovidRepository(BaseRepository[CovidStats, CovidStatsCreate, CovidStatsUpd
 
     # ------------------------------------------------------------------
     # Par pays
-    # ------------------------------------------------------------------
+
     def get_by_country(self, db: Session, country: str) -> List[CovidStats]:
         """Historique complet d’un pays, tri décroissant."""
         return (
