@@ -2,15 +2,6 @@ FROM python:3.11.2-slim
 
 WORKDIR /app
 
-# Créer un utilisateur non-root sécurisé
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "10001" \
-    appuser
 
 # Installer les dépendances système
 RUN apt-get update && apt-get install -y \
@@ -26,7 +17,10 @@ RUN python -m pip install --upgrade pip
 RUN python -m pip install -r requirements.txt
 
 # Copier tout le projet dans l'image
-COPY . .
+COPY  . . 
+
+RUN echo "📂 Contenu dans /app :" && ls -la /app
 
 # Définir la commande de lancement
-CMD ["python3", "app/main.py"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
