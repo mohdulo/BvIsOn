@@ -1,0 +1,30 @@
+# Environnement virtuel
+.venv/
+env/
+ENV/
+venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Fichiers de test et rapport
+*.html
+*.log
+.cache/
+.pytest_cache/
+.coverage
+
+# Dossiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers secrets (si jamais tu en ajoutes)
+.env
+*.env
+
+# Exports ou dumps
+*.sql
+*.csv
+*.json
