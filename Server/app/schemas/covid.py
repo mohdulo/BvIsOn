@@ -1,8 +1,7 @@
-from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
-from slugify import slugify
+from pydantic import BaseModel, ConfigDict
 
+<<<<<<< HEAD
 class CovidStatsBase(BaseModel):
     country: str
     confirmed: float
@@ -49,6 +48,8 @@ class CovidStats(CovidStatsBase):
     model_config = {
         "from_attributes": True
     }
+=======
+>>>>>>> f8d93247c44f3aeee4c06f9ef5a82377fc15c3d9
 
 class GlobalStats(BaseModel):
     confirmed: float
@@ -57,13 +58,20 @@ class GlobalStats(BaseModel):
     new_confirmed: float
     new_deaths: float
     new_recovered: float
-    last_updated: Optional[str]
-    last_updated_time: Optional[str]
+    last_updated: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class CountrySummary(BaseModel):
-    id: str      
+    id: str
     country: str
     confirmed_total: float
     confirmed_new: float
     deaths_total: float
     deaths_new: float
+<<<<<<< HEAD
+=======
+
+    model_config = ConfigDict(from_attributes=True)
+>>>>>>> f8d93247c44f3aeee4c06f9ef5a82377fc15c3d9

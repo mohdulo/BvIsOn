@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./Server
+    container_name: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Server:/app
+    depends_on:
+      - db
+    env_file:
+      - ./Server/.env
+    environment:
+      - PYTHONPATH=/app
+
+  frontend:
+    build:
+      context: ./Client
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Client:/app
+    depends_on:
+      - backend
+
+  db:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pandemics
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

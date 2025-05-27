@@ -6,6 +6,8 @@ import Countries from './pages/Countries';
 import CountryDetail from './pages/CountryDetail';
 import Analytics from './pages/Analytics';
 import DataManagement from './pages/DataManagement';
+import PredictionForm from "./components/PredictionForm";
+import MetricsTable from "./components/MetricsTable";
 
 const App: React.FC = () => {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -15,20 +17,22 @@ const App: React.FC = () => {
   };
 
   return (
-    <Router>
-      <div className="flex">
-        <Sidebar onToggle={handleSidebarToggle} />
-        <div className={`flex-1 ${sidebarExpanded ? 'ml-64' : 'ml-20'} transition-all duration-300 bg-gray-50 min-h-screen`}>
+    <>
+      <Router>
+        <Sidebar expanded={sidebarExpanded} onToggle={handleSidebarToggle} />
+        <div className={`main-content ${sidebarExpanded ? 'expanded' : 'collapsed'}`}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/countries" element={<Countries />} />
             <Route path="/countries/:countryId" element={<CountryDetail />} />
             <Route path="/analytics" element={<Analytics />} />
-            <Route path="/data-management" element={<DataManagement />} />
+            {/* <Route path="/data-management" element={<DataManagement />} /> */}
+            {/* <Route path="/prediction-form" element={<PredictionForm />} />
+            <Route path="/metrics-table" element={<MetricsTable />} /> */}
           </Routes>
         </div>
-      </div>
-    </Router>
+      </Router>
+    </>
   );
 };
 
