@@ -1,7 +1,8 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
+from typing import Optional
 
-<<<<<<< HEAD
+
 class CovidStatsBase(BaseModel):
     country: str
     confirmed: float
@@ -48,8 +49,6 @@ class CovidStats(CovidStatsBase):
     model_config = {
         "from_attributes": True
     }
-=======
->>>>>>> f8d93247c44f3aeee4c06f9ef5a82377fc15c3d9
 
 class GlobalStats(BaseModel):
     confirmed: float
@@ -70,8 +69,5 @@ class CountrySummary(BaseModel):
     confirmed_new: float
     deaths_total: float
     deaths_new: float
-<<<<<<< HEAD
-=======
 
     model_config = ConfigDict(from_attributes=True)
->>>>>>> f8d93247c44f3aeee4c06f9ef5a82377fc15c3d9
