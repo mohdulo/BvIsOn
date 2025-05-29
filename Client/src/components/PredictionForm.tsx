@@ -29,7 +29,8 @@ export default function PredictionForm() {
   ) => {
     setForm({
       ...form,
-      [key]: key === "date" ? e.target.value : (key === "Country" || key === "WHO_Region" ? e.target.value : Number(e.target.value)),
+      [key]: key === "date" ? e.target.value : (key === "Country" || key === "WHO_Region" ? e.target.value : parseInt(e.target.value)
+),
     });
   };
 
@@ -72,7 +73,7 @@ export default function PredictionForm() {
             ) : (
               <input
                 type={key === "date" ? "date" : "number"}
-                step="any"
+                step={key === "date" ? undefined : "1"}
                 value={form[key]}
                 onChange={handleChange(key)}
                 className="border p-1 rounded"

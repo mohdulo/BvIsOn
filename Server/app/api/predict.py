@@ -30,7 +30,7 @@ def predict(input: InputRow):
     }])
 
     pred = model.predict(input_data)[0]
-    return {"pred_new_deaths": float(pred)}
+    return {"pred_new_deaths": int(round(pred))}
 
 
 # # Chargement du DataFrame utilisé pour l'entraînement (à adapter selon ton projet)
