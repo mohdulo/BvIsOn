@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["vitest", "node"],
+    "baseUrl": "."
+  },
+  "include": ["src"]
+}
+
+
