@@ -14,8 +14,10 @@ export interface InputRow {
 }
 
 export interface Metadata {
-  countries: string[];
   who_regions: string[];
+  countries_by_region: {
+    [region: string]: string[];
+  };
 }
 
 export interface PredictionOut {

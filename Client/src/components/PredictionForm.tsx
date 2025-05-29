@@ -15,23 +15,39 @@ const emptyRow: InputRow = {
 
 export default function PredictionForm() {
   const [form, setForm] = useState<InputRow>(emptyRow);
-  const [metadata, setMetadata] = useState<Metadata>({ countries: [], who_regions: [] });
+  const [metadata, setMetadata] = useState<Metadata>({
+    who_regions: [],
+    countries_by_region: {},
+  });
+  const [availableCountries, setAvailableCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<number | null>(null);
 
   useEffect(() => {
-    getMetadata().then(setMetadata).catch(() => setError("Impossible de charger les métadonnées"));
+    getMetadata()
+      .then((data) => {
+        setMetadata(data);
+      })
+      .catch(() => setError("Impossible de charger les métadonnées"));
   }, []);
 
   const handleChange = (key: keyof InputRow) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setForm({
-      ...form,
-      [key]: key === "date" ? e.target.value : (key === "Country" || key === "WHO_Region" ? e.target.value : parseInt(e.target.value)
-),
-    });
+    const value = e.target.value;
+
+    if (key === "WHO_Region") {
+      setForm({ ...form, WHO_Region: value, Country: "" });
+      const countries = metadata.countries_by_region[value] || [];
+      setAvailableCountries(countries);
+    } else if (key === "Country") {
+      setForm({ ...form, Country: value });
+    } else if (key === "date") {
+      setForm({ ...form, date: value });
+    } else {
+      setForm({ ...form, [key]: parseInt(value) });
+    }
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,18 +72,33 @@ export default function PredictionForm() {
         {(Object.keys(emptyRow) as (keyof InputRow)[]).map((key) => (
           <label key={key} className="flex flex-col text-sm">
             {key}
-            {key === "Country" ? (
-              <select value={form.Country} onChange={handleChange("Country")} required className="border p-1 rounded">
-                <option value="">Choisir un pays</option>
-                {metadata.countries.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            ) : key === "WHO_Region" ? (
-              <select value={form.WHO_Region} onChange={handleChange("WHO_Region")} required className="border p-1 rounded">
+            {key === "WHO_Region" ? (
+              <select
+                value={form.WHO_Region}
+                onChange={handleChange("WHO_Region")}
+                required
+                className="border p-1 rounded"
+              >
                 <option value="">Choisir une région OMS</option>
                 {metadata.who_regions.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            ) : key === "Country" ? (
+              <select
+                value={form.Country}
+                onChange={handleChange("Country")}
+                required
+                className="border p-1 rounded"
+                disabled={!form.WHO_Region}
+              >
+                <option value="">Choisir un pays</option>
+                {availableCountries.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             ) : (
@@ -96,8 +127,7 @@ export default function PredictionForm() {
 
       {result !== null && !error && (
         <p className="mt-6 text-xl">
-          Nouveaux décès prédits :{" "}
-          <strong>{result.toLocaleString()}</strong>
+          Nouveaux décès prédits : <strong>{result.toLocaleString()}</strong>
         </p>
       )}
     </div>
