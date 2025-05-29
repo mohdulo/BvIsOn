@@ -13,6 +13,11 @@ export interface InputRow {
   WHO_Region: string;
 }
 
+export interface Metadata {
+  countries: string[];
+  who_regions: string[];
+}
+
 export interface PredictionOut {
   pred_new_deaths: number;
 }
@@ -24,4 +29,10 @@ const api = axios.create({
 export async function predict(row: InputRow) {
   const { data } = await api.post<PredictionOut>("/predict", row);
   return data;
+}
+
+export async function getMetadata(): Promise<Metadata> {
+  const res = await fetch("http://localhost:8000/api/v1/metadata");
+  if (!res.ok) throw new Error("Erreur récupération metadata");
+  return res.json();
 }

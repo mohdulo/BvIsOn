@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.schemas.prediction import InputRow, PredictionOut
 import pickle
 import os
-from datetime import datetime
+# from datetime import datetime
 
 router = APIRouter()
 
@@ -32,4 +32,16 @@ def predict(input: InputRow):
     pred = model.predict(input_data)[0]
     return {"pred_new_deaths": float(pred)}
 
+
+# # Chargement du DataFrame utilisé pour l'entraînement (à adapter selon ton projet)
+# df = pd.read_csv("chemin/vers/ton_df.csv")  # ou ton df original en mémoire
+
+# @router.get("/api/v1/metadata")
+# def get_metadata():
+#     countries = sorted(df['Country'].dropna().unique().tolist())
+#     regions = sorted(df['WHO_Region'].dropna().unique().tolist())
+#     return {
+#         "countries": countries,
+#         "regions": regions
+#     }
 

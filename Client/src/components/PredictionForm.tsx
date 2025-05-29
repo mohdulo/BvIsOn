@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { predict, InputRow } from "../api/predict";
+import { useState, useEffect } from "react";
+import { predict, InputRow, getMetadata, Metadata } from "../api/predict";
 
 const emptyRow: InputRow = {
   Confirmed: 0,
@@ -15,18 +15,21 @@ const emptyRow: InputRow = {
 
 export default function PredictionForm() {
   const [form, setForm] = useState<InputRow>(emptyRow);
+  const [metadata, setMetadata] = useState<Metadata>({ countries: [], who_regions: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<number | null>(null);
 
+  useEffect(() => {
+    getMetadata().then(setMetadata).catch(() => setError("Impossible de charger les métadonnées"));
+  }, []);
+
   const handleChange = (key: keyof InputRow) => (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const isNumeric =
-      key !== "date" && key !== "Country" && key !== "WHO_Region";
     setForm({
       ...form,
-      [key]: isNumeric ? Number(e.target.value) : e.target.value,
+      [key]: key === "date" ? e.target.value : (key === "Country" || key === "WHO_Region" ? e.target.value : Number(e.target.value)),
     });
   };
 
@@ -52,22 +55,33 @@ export default function PredictionForm() {
         {(Object.keys(emptyRow) as (keyof InputRow)[]).map((key) => (
           <label key={key} className="flex flex-col text-sm">
             {key}
-            <input
-              type={
-                key === "date"
-                  ? "date"
-                  : key === "Country" || key === "WHO_Region"
-                  ? "text"
-                  : "number"
-              }
-              step="any"
-              value={form[key]}
-              onChange={handleChange(key)}
-              className="border p-1 rounded"
-              required
-            />
+            {key === "Country" ? (
+              <select value={form.Country} onChange={handleChange("Country")} required className="border p-1 rounded">
+                <option value="">Choisir un pays</option>
+                {metadata.countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            ) : key === "WHO_Region" ? (
+              <select value={form.WHO_Region} onChange={handleChange("WHO_Region")} required className="border p-1 rounded">
+                <option value="">Choisir une région OMS</option>
+                {metadata.who_regions.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={key === "date" ? "date" : "number"}
+                step="any"
+                value={form[key]}
+                onChange={handleChange(key)}
+                className="border p-1 rounded"
+                required
+              />
+            )}
           </label>
         ))}
+
         <button
           type="submit"
           className="col-span-2 bg-blue-600 text-white py-2 rounded"

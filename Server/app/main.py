@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import covid
 from app.api.endpoints import covid, manage 
 from app.api import predict 
+from app.api.endpoints import metadata  # <- ajouter ça si pas déjà fait
 
 app = FastAPI()
 
@@ -18,3 +19,4 @@ app.add_middleware(
 app.include_router(covid.router, prefix="/api/v1")
 app.include_router(manage.router, prefix="/api/v1")
 app.include_router(predict.router, prefix="/api/v1")
+app.include_router(metadata.router, prefix="/api/v1")
