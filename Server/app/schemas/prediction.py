@@ -1,15 +1,20 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class InputRow(BaseModel):
-    Confirmed_log: float
-    Confirmed_log_ma_14: float
-    cases_per_million: float
-    tests_per_million: float
-    population: float
-    density: float
-    Lat: float
-    Long: float
+    Confirmed: float
+    Deaths: float
+    Recovered: float
+    Active: float
+    New_cases: float
+    New_recovered: float
+    date: datetime
+    Country: str
+    WHO_Region: str
+
+
 
 class PredictionOut(BaseModel):
-    pred_log: float
-    pred_deaths: float
+    pred_new_deaths: float
+
+

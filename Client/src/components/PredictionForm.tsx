@@ -2,14 +2,15 @@ import { useState } from "react";
 import { predict, InputRow } from "../api/predict";
 
 const emptyRow: InputRow = {
-  Confirmed_log: 0,
-  Confirmed_log_ma_14: 0,
-  cases_per_million: 0,
-  tests_per_million: 0,
-  population: 0,
-  density: 0,
-  Lat: 0,
-  Long: 0,
+  Confirmed: 0,
+  Deaths: 0,
+  Recovered: 0,
+  Active: 0,
+  New_cases: 0,
+  New_recovered: 0,
+  date: "",
+  Country: "",
+  WHO_Region: "",
 };
 
 export default function PredictionForm() {
@@ -18,8 +19,16 @@ export default function PredictionForm() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<number | null>(null);
 
-  const handleChange = (key: keyof InputRow) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [key]: Number(e.target.value) });
+  const handleChange = (key: keyof InputRow) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const isNumeric =
+      key !== "date" && key !== "Country" && key !== "WHO_Region";
+    setForm({
+      ...form,
+      [key]: isNumeric ? Number(e.target.value) : e.target.value,
+    });
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +36,7 @@ export default function PredictionForm() {
     setLoading(true);
     try {
       const res = await predict(form);
-      setResult(res.pred_deaths);
+      setResult(res.pred_new_deaths);
     } catch (err) {
       setError("Erreur lors de la prédiction 😢");
     } finally {
@@ -37,16 +46,20 @@ export default function PredictionForm() {
 
   return (
     <div className="max-w-xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Prédire les décès Covid</h1>
+      <h1 className="text-2xl font-bold mb-4">Prédire les nouveaux décès Covid</h1>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-        {(
-          Object.keys(emptyRow) as (keyof InputRow)[]
-        ).map((key) => (
+        {(Object.keys(emptyRow) as (keyof InputRow)[]).map((key) => (
           <label key={key} className="flex flex-col text-sm">
             {key}
             <input
-              type="number"
+              type={
+                key === "date"
+                  ? "date"
+                  : key === "Country" || key === "WHO_Region"
+                  ? "text"
+                  : "number"
+              }
               step="any"
               value={form[key]}
               onChange={handleChange(key)}
@@ -68,7 +81,8 @@ export default function PredictionForm() {
 
       {result !== null && !error && (
         <p className="mt-6 text-xl">
-          Décès prédits : <strong>{result.toLocaleString()}</strong>
+          Nouveaux décès prédits :{" "}
+          <strong>{result.toLocaleString()}</strong>
         </p>
       )}
     </div>

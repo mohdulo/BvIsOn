@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+
 import SidebarLink from './SidebarLink';
 import { 
   LayoutDashboard, 
@@ -8,10 +9,12 @@ import {
   Database,
   LogOut,
   Menu,
-  X
+  X,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
+  expanded?: boolean;
   onToggle?: (expanded: boolean) => void;
 }
 
@@ -86,6 +89,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
               icon={<Database size={20} />} 
               label="Data Management" 
               expanded={expanded} 
+            />
+            <SidebarLink
+              to="/prediction"
+              icon={<Activity size={20} />}
+              label="Prediction"
+              expanded={expanded}
             />
           </ul>
         </nav>

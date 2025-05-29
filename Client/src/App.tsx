@@ -5,8 +5,9 @@ import Dashboard from './pages/Dashboard';
 import Countries from './pages/Countries';
 import CountryDetail from './pages/CountryDetail';
 import Analytics from './pages/Analytics';
-import DataManagement from './pages/DataManagement';
-import PredictionForm from "./components/PredictionForm";
+import Prediction from './pages/prediction';
+// import DataManagement from './pages/DataManagement';
+// import PredictionForm from "./components/PredictionForm";
 import MetricsTable from "./components/MetricsTable";
 
 const App: React.FC = () => {
@@ -27,8 +28,8 @@ const App: React.FC = () => {
             <Route path="/countries/:countryId" element={<CountryDetail />} />
             <Route path="/analytics" element={<Analytics />} />
             {/* <Route path="/data-management" element={<DataManagement />} /> */}
-            {/* <Route path="/prediction-form" element={<PredictionForm />} />
-            <Route path="/metrics-table" element={<MetricsTable />} /> */}
+            <Route path="/prediction" element={<Prediction />} /> {/* ✅ ajout ici */}
+            <Route path="/metrics-table" element={<MetricsTable />} /> 
           </Routes>
         </div>
       </Router>
