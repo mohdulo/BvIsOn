@@ -27,7 +27,7 @@ describe("PredictionForm", () => {
     render(<PredictionForm />);
 
     // Sélection de la région OMS
-    const regionSelect = await screen.findByLabelText("WHO_Region");
+    const regionSelect = await screen.findByLabelText("WHO Region");
     fireEvent.change(regionSelect, { target: { value: "Africa" } });
 
     // Vérifie que les bons pays sont affichés
@@ -42,14 +42,14 @@ describe("PredictionForm", () => {
     render(<PredictionForm />);
 
     // Remplit le formulaire
-    fireEvent.change(await screen.findByLabelText("WHO_Region"), { target: { value: "Africa" } });
+    fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
     fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
     fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
     fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
     fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
     fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
-    fireEvent.change(screen.getByLabelText("New_cases"), { target: { value: "50" } });
-    fireEvent.change(screen.getByLabelText("New_recovered"), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
     fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
 
     // Soumission
@@ -57,7 +57,10 @@ describe("PredictionForm", () => {
 
     // Vérifie le résultat
     await waitFor(() => {
-      expect(screen.getByText(/nouveaux décès prédits/i)).toBeInTheDocument();
+      expect(screen.getByText((content) =>
+  content.includes("Nouveaux décès prédits")
+)).toBeInTheDocument();
+
       expect(screen.getByText(/42/)).toBeInTheDocument();
     });
   });
@@ -67,15 +70,15 @@ describe("PredictionForm", () => {
 
   render(<PredictionForm />);
 
-  fireEvent.change(await screen.findByLabelText("WHO_Region"), { target: { value: "Africa" } });
+  fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
   fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
 
   fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
   fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
   fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
   fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
-  fireEvent.change(screen.getByLabelText("New_cases"), { target: { value: "50" } });
-  fireEvent.change(screen.getByLabelText("New_recovered"), { target: { value: "30" } });
+  fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
+  fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
   fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
 
   fireEvent.click(screen.getByRole("button", { name: /prédire/i }));
@@ -87,7 +90,7 @@ describe("PredictionForm", () => {
 it("n'envoie pas le formulaire si des champs sont vides", async () => {
   render(<PredictionForm />);
 
-  fireEvent.change(await screen.findByLabelText("WHO_Region"), { target: { value: "Africa" } });
+  fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
   fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
 
   // Laisse tous les autres champs vides
@@ -108,15 +111,16 @@ it("désactive le bouton pendant la prédiction", async () => {
 
   render(<PredictionForm />);
 
-  fireEvent.change(await screen.findByLabelText("WHO_Region"), { target: { value: "Africa" } });
-  fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
-  fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
-  fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
-  fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
-  fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
-  fireEvent.change(screen.getByLabelText("New_cases"), { target: { value: "50" } });
-  fireEvent.change(screen.getByLabelText("New_recovered"), { target: { value: "30" } });
-  fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
+  fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
+fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
+fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
+fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
+fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
+fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
+fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
+fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
+fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
+
 
   const submitButton = screen.getByRole("button", { name: /prédire/i });
   fireEvent.click(submitButton);
