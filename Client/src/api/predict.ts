@@ -1,29 +1,40 @@
+// src/api/predict.ts
 import axios from "axios";
 
-/* ---------- Types ---------- */
 export interface InputRow {
-  Confirmed_log: number;
-  Confirmed_log_ma_14: number;
-  cases_per_million: number;
-  tests_per_million: number;
-  population: number;
-  density: number;
-  Lat: number;
-  Long: number;
+  Confirmed: number;
+  Deaths: number;
+  Recovered: number;
+  Active: number;
+  New_cases: number;
+  New_recovered: number;
+  date: string; // Date ISO string
+  Country: string;
+  WHO_Region: string;
 }
 
-export interface Prediction {
-  pred_log: number;
-  pred_deaths: number;
+export interface Metadata {
+  who_regions: string[];
+  countries_by_region: {
+    [region: string]: string[];
+  };
 }
 
-/* ---------- Axios instance ---------- */
+export interface PredictionOut {
+  pred_new_deaths: number;
+}
+
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL_ROOT}/api/v1`,
 });
 
-/* ---------- Function ---------- */
 export async function predict(row: InputRow) {
-  const { data } = await api.post<Prediction>("/predict", row);
+  const { data } = await api.post<PredictionOut>("/predict", row);
   return data;
+}
+
+export async function getMetadata(): Promise<Metadata> {
+  const res = await fetch("http://localhost:8000/api/v1/metadata");
+  if (!res.ok) throw new Error("Erreur récupération metadata");
+  return res.json();
 }
