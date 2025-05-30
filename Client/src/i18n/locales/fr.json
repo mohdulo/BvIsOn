@@ -1,0 +1,16 @@
+{
+  "prediction": {
+    "title": "Prédire les nouveaux décès Covid"
+  },
+  "sidebar": {
+    "dashboard": "Tableau de bord",
+    "countries": "Pays",
+    "analytics": "Analytique",
+    "dataManagement": "Gestion des données",
+    "prediction": "Prédiction",
+    "logout": "Déconnexion",
+    "navigation": "Navigation",
+    "management": "Gestion"
+  }
+}
+

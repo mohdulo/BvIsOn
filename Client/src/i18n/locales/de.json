@@ -1,0 +1,12 @@
+{
+  "prediction": {
+    "title": "Vorhersage neuer Covid-Todesfälle"
+  },
+  "sidebar": {
+    "prediction": "Vorhersage",
+    "dashboard": "Dashboard",
+    "countries": "Länder",
+    "analytics": "Analytik",
+    "dataManagement": "Datenverwaltung"
+  }
+}
