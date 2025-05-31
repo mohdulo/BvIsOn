@@ -10,7 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Countries from "./pages/Countries";
 import CountryDetail from "./pages/CountryDetail";
 import Analytics from "./pages/Analytics";
-import PredictionPage from "./pages/Prediction";
+import PredictionPage from "./pages/prediction";
 import DataManagement from "./pages/DataManagement";
 
 const AppContent: React.FC = () => {

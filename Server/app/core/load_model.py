@@ -1,4 +1,4 @@
-import joblib
+import pickle
 import pathlib
 
 # ../models/pipeline.pkl
@@ -8,7 +8,9 @@ MODEL_PATH = (
     .parent        # → core
     .parent        # → app
     / "models"
-    / "pipeline.pkl"   # ← nouveau fichier
+    / "pipeline.pkl"
 )
 
-model = joblib.load(MODEL_PATH)
+with open(MODEL_PATH, "rb") as f:
+    model = pickle.load(f)
+
