@@ -17,4 +17,3 @@ class InputRow(BaseModel):
 class PredictionOut(BaseModel):
     pred_new_deaths: float
 
-

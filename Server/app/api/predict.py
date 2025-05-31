@@ -44,4 +44,3 @@ def predict(input: InputRow):
 #         "countries": countries,
 #         "regions": regions
 #     }
-
