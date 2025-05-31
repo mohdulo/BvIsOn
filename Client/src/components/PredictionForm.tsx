@@ -79,7 +79,7 @@ export default function PredictionPage() {
       setPredictedDeaths(res.pred_new_deaths);
       setSubmitted(true);
     } catch (err) {
-      setError("Erreur lors de la prédiction 😢");
+      setError("Error during prediction 😢");
     } finally {
       setLoading(false);
     }
@@ -101,10 +101,10 @@ export default function PredictionPage() {
       <aside className="w-full md:w-[380px] bg-white shadow-2xl">
         <div className="bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white px-6 py-5 rounded-b-3xl">
           <h2 className="text-lg font-bold flex items-center gap-2">
-            <HeartPulse className="w-5 h-5" /> Paramètres de Prédiction
+            <HeartPulse className="w-5 h-5" /> Prediction Settings
           </h2>
           <p className="text-xs opacity-80 mt-1">
-            Entrez les données pour générer une prédiction
+            Enter the data to generate a prediction
           </p>
         </div>
 
@@ -123,7 +123,7 @@ export default function PredictionPage() {
                   required
                   className={inputClass}
                 >
-                  <option value="">Choisir une région OMS</option>
+                  <option value="">Select WHO region</option>
                   {metadata.who_regions.map((r) => (
                     <option key={r} value={r}>
                       {r}
@@ -139,7 +139,7 @@ export default function PredictionPage() {
                   disabled={!form.WHO_Region}
                   className={inputClass + " disabled:opacity-50"}
                 >
-                  <option value="">Choisir un pays</option>
+                  <option value="">Select country</option>
                   {availableCountries.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -165,7 +165,7 @@ export default function PredictionPage() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-fuchsia-700 transition-all disabled:opacity-50"
           >
-            {loading ? "Calcul en cours..." : "📉 Générer Prédiction"}
+            {loading ? "Calculating..." : "📉 Generate Prediction"}
           </button>
         </form>
       </aside>
@@ -178,7 +178,7 @@ export default function PredictionPage() {
           <div className="space-y-8">
             <MetricCard
               icon={AlertTriangle}
-              label="Décès Prédits"
+              label="Predicted Deaths"
               value={predictedDeaths ?? 0}
               accent="red"
             />
@@ -205,9 +205,9 @@ function EmptyState() {
   return (
     <div className="border-2 border-dashed rounded-xl h-full flex flex-col items-center justify-center text-gray-500">
       <Activity className="w-5 h-5 mb-4" />
-      <h3 className="text-lg font-semibold mb-1">Prêt pour la prédiction</h3>
+      <h3 className="text-lg font-semibold mb-1">Ready for prediction</h3>
       <p className="text-sm max-w-sm text-center">
-        Entrez vos paramètres et cliquez sur "Générer Prédiction" pour commencer
+        Enter your parameters and click "Generate Prediction" to start
       </p>
     </div>
   );
@@ -266,18 +266,18 @@ function CountryInfo({ country, region, date }: InfoProps) {
     <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col justify-between h-full">
       <div className="space-y-6">
         <h3 className="text-xl font-bold flex items-center gap-2">
-          <Globe className="w-5 h-5 text-indigo-600" /> Informations Pays
+          <Globe className="w-5 h-5 text-indigo-600" /> Country Information
         </h3>
 
         <dl className="space-y-4">
-          <Item icon={MapPin} label="Pays" value={country || "-"} />
-          <Item icon={Globe} label="Région OMS" value={region || "-"} />
-          <Item icon={Calendar} label="Date de prédiction" value={formattedDate} />
+          <Item icon={MapPin} label="Country" value={country || "-"} />
+          <Item icon={Globe} label="WHO Region" value={region || "-"} />
+          <Item icon={Calendar} label="Prediction Date" value={formattedDate} />
         </dl>
       </div>
 
       <p className="text-xs text-center text-gray-400 mt-8">
-        Dernière mise à jour
+        Last update
         <br />
         {formattedDate}
       </p>
@@ -311,15 +311,14 @@ interface RatesProps {
 
 function RatesChart({ deathRate, recoveredRate }: RatesProps) {
   const data = [
-    { name: "Décès", value: Number(deathRate.toFixed(2)) },
-    { name: "Guéris", value: Number(recoveredRate.toFixed(2)) },
+    { name: "Deaths", value: Number(deathRate.toFixed(2)) },
+    { name: "Recovered", value: Number(recoveredRate.toFixed(2)) },
   ];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 h-full">
       <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <AlertTriangle className="w-5 h-5 text-red-600" /> Visualisation des
-        Taux (%)
+        <AlertTriangle className="w-5 h-5 text-red-600" /> Rates Visualization (%)
       </h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>

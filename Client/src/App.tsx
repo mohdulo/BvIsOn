@@ -21,7 +21,7 @@ const AppContent: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Sélecteur de pays pour tester */}
       <div className="fixed top-4 right-4 z-50 bg-white border rounded p-2 text-sm">
-        <label className="mr-2 font-medium">Pays :</label>
+        <label className="mr-2 font-medium">Country :</label>
         <select
           value={user.country}
           onChange={(e) => switchCountry(e.target.value as CountryCode)}
