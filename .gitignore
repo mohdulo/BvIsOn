@@ -1,0 +1,36 @@
+# Node modules (React frontend)
+**/node_modules/
+**/build/
+**/.env.local
+**/.env.development
+**/.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+*.log
+*.sqlite3
+*.db
+
+# FastAPI backend (Python venv & env)
+venv/
+.env
+.env.*
+
+# VSCode & system files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Mac/Linux swap & lock files
+*.swp
+*.swo
+.lock
+
+__pycache__/
+*.py[cod]
