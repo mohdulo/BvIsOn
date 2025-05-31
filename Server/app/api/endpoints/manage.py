@@ -12,11 +12,13 @@ from app.db.repositories.manage_repo import (
 router = APIRouter(prefix="/covid/countries", tags=["manage"])
 
 
+# -------- list --------
 @router.get("/manage", response_model=list[CountryManage])
 def read_all(db: Session = Depends(get_db)):
     return list_country_totals(db)
 
 
+# -------- update --------
 @router.put("/{cid}", response_model=CountryManage)
 def put_country(cid: str, payload: CountryManage, db: Session = Depends(get_db)):
     if cid != payload.id:
@@ -24,6 +26,7 @@ def put_country(cid: str, payload: CountryManage, db: Session = Depends(get_db))
     return update_country_totals(db, cid, payload)
 
 
+# -------- delete --------
 @router.delete("/{cid}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_country(cid: str, db: Session = Depends(get_db)):
     delete_country(db, cid)

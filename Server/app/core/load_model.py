@@ -1,4 +1,14 @@
-import joblib, pathlib
+import joblib
+import pathlib
 
-MODEL_PATH = pathlib.Path(__file__).resolve().parent.parent / "models" / "covid_deaths_xgb.joblib"
+# ../models/pipeline.pkl
+MODEL_PATH = (
+    pathlib.Path(__file__)
+    .resolve()
+    .parent        # → core
+    .parent        # → app
+    / "models"
+    / "pipeline.pkl"   # ← nouveau fichier
+)
+
 model = joblib.load(MODEL_PATH)

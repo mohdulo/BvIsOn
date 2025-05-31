@@ -6,18 +6,40 @@ from app.db.models.covid import CovidStat
 from app.schemas.manage import CountryManage
 
 
-# --- LISTE pour Data-Management ---------------------------------
+# ---------- READ  (1 seule ligne – la plus récente – par pays) ----------
 def list_country_totals(db: Session) -> List[CountryManage]:
+    """
+    Retourne le « snapshot » le plus récent pour chaque pays.
+    `total_confirmed`, `total_deaths`, … sont déjà cumulatifs, on ne les somme plus.
+    """
+
+    # Sous-requête : timestamp max pour chaque pays
+    latest_per_country = (
+        db.query(
+            CovidStat.country.label("country"),
+            func.max(CovidStat.date_timestamp).label("max_ts"),
+        )
+        .group_by(CovidStat.country)
+        .subquery()
+    )
+
+    # On joint pour récupérer la ligne complète correspondant à ce max_ts
     rows = (
         db.query(
             CovidStat.country.label("country"),
-            func.sum(CovidStat.total_confirmed).label("total_cases"),
-            func.sum(CovidStat.total_deaths).label("total_deaths"),
-            func.sum(CovidStat.total_recovered).label("total_recovered"),
+            CovidStat.total_confirmed.label("total_cases"),
+            CovidStat.total_deaths.label("total_deaths"),
+            CovidStat.total_recovered.label("total_recovered"),
         )
-        .group_by(CovidStat.country)
+        .join(
+            latest_per_country,
+            (CovidStat.country == latest_per_country.c.country)
+            & (CovidStat.date_timestamp == latest_per_country.c.max_ts),
+        )
         .all()
     )
+
+    # Mapping → schéma Pydantic
     return [
         CountryManage(
             id=row.country.lower().replace(" ", "-"),
@@ -30,23 +52,31 @@ def list_country_totals(db: Session) -> List[CountryManage]:
     ]
 
 
-# --- UPDATE ------------------------------------------------------
+# ---------- UPDATE  (inchangé) ----------
 def update_country_totals(db: Session, cid: str, data: CountryManage) -> CountryManage:
-    # on met à jour toutes les lignes du pays (simple démo)
+    slug_to_match = cid.replace("-", " ").lower()
+
     db.execute(
         update(CovidStat)
-        .where(CovidStat.country == data.country)
+        .where(func.lower(CovidStat.country) == slug_to_match)
         .values(
             total_confirmed=data.total_cases,
             total_deaths=data.total_deaths,
             total_recovered=data.total_recovered,
         )
+        .execution_options(synchronize_session=False)
     )
     db.commit()
     return data
 
 
-# --- DELETE ------------------------------------------------------
+# ---------- DELETE  (inchangé) ----------
 def delete_country(db: Session, cid: str) -> None:
-    db.execute(delete(CovidStat).where(CovidStat.country.ilike(cid.replace("-", " "))))
+    slug_to_match = cid.replace("-", " ").lower()
+
+    db.execute(
+        delete(CovidStat)
+        .where(func.lower(CovidStat.country) == slug_to_match)
+        .execution_options(synchronize_session=False)
+    )
     db.commit()

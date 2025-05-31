@@ -1,114 +1,124 @@
-import React, { useState, useEffect } from 'react';
-
-import SidebarLink from './SidebarLink';
-import { 
-  LayoutDashboard, 
-  Globe, 
-  BarChart, 
+// src/components/Sidebar.tsx
+import React, { JSX } from "react";
+import SidebarLink from "./SidebarLink";
+import {
+  LayoutDashboard,
+  Globe,
+  BarChart,
   Database,
   LogOut,
   Menu,
-  X
-} from 'lucide-react';
+  X,
+  PercentDiamondIcon,
+} from "lucide-react";
+
+import { useAuth } from "../contexts/AuthContext";
+import { canAccess, RouteKey } from "../permissions";
 
 interface SidebarProps {
-  onToggle?: (expanded: boolean) => void;
+  expanded: boolean;
+  onToggle: (expanded: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
-  const [expanded, setExpanded] = useState(true);
-  
-  const toggleSidebar = () => {
-    const newExpanded = !expanded;
-    setExpanded(newExpanded);
-    if (onToggle) {
-      onToggle(newExpanded);
-    }
-  };
-  
-  // Set initial state when component mounts
-  useEffect(() => {
-    if (onToggle) {
-      onToggle(expanded);
-    }
-  }, []);
-  
+const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
+  const { user } = useAuth(); // récupère le pays de l’utilisateur
+  const toggleSidebar = () => onToggle(!expanded);
+
+  /** Configuration centralisée du menu */
+  const links: {
+    to: string;
+    icon: JSX.Element;
+    label: string;
+    key: RouteKey;
+  }[] = [
+    {
+      to: "/",
+      icon: <LayoutDashboard size={20} />,
+      label: "Dashboard",
+      key: "dashboard",
+    },
+    {
+      to: "/countries",
+      icon: <Globe size={20} />,
+      label: "Countries",
+      key: "countries",
+    },
+    {
+      to: "/analytics",
+      icon: <BarChart size={20} />,
+      label: "Analytics",
+      key: "analytics",
+    },
+    {
+      to: "/data-management",
+      icon: <Database size={20} />,
+      label: "Data Management",
+      key: "data-management",
+    },
+    {
+      to: "/prediction",
+      icon: <PercentDiamondIcon size={20} />,
+      label: "Prediction",
+      key: "prediction",
+    },
+  ];
+
+  /** Filtrage des liens selon les permissions */
+  const visibleLinks = links.filter((link) =>
+    canAccess(user.country, link.key)
+  );
+
   return (
-    <div 
+    <aside
       className={`${
-        expanded ? 'w-64' : 'w-20'
-      } h-screen bg-white text-black transition-all duration-300 fixed left-0 top-0 z-50 shadow-lg`}
+        expanded ? "w-64" : "w-20"
+      } min-h-screen bg-white text-black shadow-lg transition-all duration-300 flex flex-col flex-shrink-0`}
     >
+      {/* ---------- header ---------- */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        {expanded ? (
-          <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-semibold">Covid App</h1>
-          </div>
-        ) : (
-         null
+        {expanded && (
+          <h1 className="text-xl font-semibold whitespace-nowrap">
+            Covid&nbsp;App
+          </h1>
         )}
-        <button 
-          onClick={toggleSidebar} 
-          className="text-gray-300"
-        >
+        <button onClick={toggleSidebar} className="text-gray-400">
           {expanded ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
-      
-      <div className="py-4">
+
+      {/* ---------- nav ---------- */}
+      <nav className="py-4 flex-1 overflow-y-auto">
         {expanded && (
           <div className="px-4 py-2 text-xs uppercase text-gray-500 font-semibold">
             Navigation
           </div>
         )}
-        <nav>
-          <ul className="space-y-2 px-2">
-            <SidebarLink 
-              to="/" 
-              icon={<LayoutDashboard size={20} />} 
-              label="Dashboard" 
-              expanded={expanded} 
+
+        <ul className="space-y-2 px-2">
+          {visibleLinks.map(({ to, icon, label }) => (
+            <SidebarLink
+              key={to}
+              to={to}
+              icon={icon}
+              label={label}
+              expanded={expanded}
             />
-            <SidebarLink 
-              to="/countries" 
-              icon={<Globe size={20} />} 
-              label="Countries" 
-              expanded={expanded} 
-            />
-            <SidebarLink 
-              to="/analytics" 
-              icon={<BarChart size={20} />} 
-              label="Analytics" 
-              expanded={expanded} 
-            />
-            <SidebarLink 
-              to="/data-management" 
-              icon={<Database size={20} />} 
-              label="Data Management" 
-              expanded={expanded} 
-            />
-          </ul>
-        </nav>
-        
-        {expanded && (
-          <div className="px-4 py-2 mt-8 text-xs uppercase text-gray-500 font-semibold">
-            Management
-          </div>
-        )}
-        <div className="px-2 mt-2">
-          {expanded ? (
-            <button className="flex items-center w-full px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors group">
-              <LogOut size={20} className="mr-3" />
-              <span>Logout</span>
-            </button>
-          ) : (
-            <button className="flex items-center justify-center w-full px-2 py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors group">
-              <LogOut size={20} />
-            </button>
-          )}
-        </div>
+          ))}
+        </ul>
+      </nav>
+
+      {/* ---------- logout (collé en bas) ---------- */}
+      <div className="px-2 py-4 border-t border-gray-200">
+        <button
+          className={`flex items-center w-full ${
+            expanded ? "justify-start px-4" : "justify-center px-2"
+          } py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors group`}
+        >
+          <LogOut size={20} className={expanded ? "mr-3" : ""} />
+          {expanded && <span>Logout</span>}
+        </button>
       </div>
-    </div>
+    </aside>
   );
 };
 
