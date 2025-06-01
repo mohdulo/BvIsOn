@@ -53,13 +53,13 @@ describe("PredictionForm", () => {
     fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
 
     // Soumission
-    fireEvent.click(screen.getByRole("button", { name: /prédiction/i })
+    fireEvent.click(screen.getByRole("button", { name: /predict/i })
 );
 
     // Vérifie le résultat
     await waitFor(() => {
       expect(screen.getByText((content) =>
-  content.includes("Décès Prédits")
+  content.includes("Predicted Deaths")
 )).toBeInTheDocument();
 
       expect(screen.getByText(/42/)).toBeInTheDocument();
@@ -82,11 +82,11 @@ describe("PredictionForm", () => {
   fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
   fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
 
-  fireEvent.click(screen.getByRole("button", { name: /prédiction/i })
+  fireEvent.click(screen.getByRole("button", { name: /predict/i })
 );
 
   await waitFor(() => {
-    expect(screen.getByText(/erreur lors de la prédiction/i)).toBeInTheDocument();
+    expect(screen.getByText(/Error during prediction/i)).toBeInTheDocument();
   });
 });
 it("n'envoie pas le formulaire si des champs sont vides", async () => {
@@ -97,13 +97,13 @@ it("n'envoie pas le formulaire si des champs sont vides", async () => {
 
   // Laisse tous les autres champs vides
 
-  const submitButton = screen.getByRole("button", { name: /prédiction/i })
+  const submitButton = screen.getByRole("button", { name: /predict/i })
 ;
   fireEvent.click(submitButton);
 
   await waitFor(() => {
     // Il ne doit PAS y avoir de texte "nouveaux décès prédits"
-    expect(screen.queryByText(/Décès Prédits/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Predicted Deaths/i)).not.toBeInTheDocument();
   });
 });
 it("désactive le bouton pendant la prédiction", async () => {
@@ -125,7 +125,7 @@ fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30"
 fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
 
 
-  const submitButton = screen.getByRole("button", { name: /prédiction/i })
+  const submitButton = screen.getByRole("button", { name: /predict/i })
 ;
   fireEvent.click(submitButton);
 
@@ -135,7 +135,7 @@ fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" 
 
   // Attend la fin
   await waitFor(() => {
-    expect(screen.getByText(/Décès Prédits/i)).toBeInTheDocument();
+    expect(screen.getByText(/Predicted Deaths/i)).toBeInTheDocument();
   });
 
   // Le bouton est à nouveau actif

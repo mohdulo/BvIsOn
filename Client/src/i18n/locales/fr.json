@@ -1,7 +1,9 @@
 {
   "prediction": {
-    "title": "Prédire les nouveaux décès Covid"
-  },
+  "title": "Prédiction",
+  "pageTitle": "Prédire les nouveaux décès Covid"
+}
+,
   "sidebar": {
     "dashboard": "Tableau de bord",
     "countries": "Pays",
@@ -11,6 +13,124 @@
     "logout": "Déconnexion",
     "navigation": "Navigation",
     "management": "Gestion"
+  },
+  "countries_page": {
+  "title": "Pays",
+  "confirmed": "Confirmés",
+  "deaths": "Décès",
+  "new": "nouveaux",
+  "search_placeholder": "Rechercher des pays…"
+},
+"dashboard": {
+  "title": "Tableau de bord COVID-19",
+  "subtitle": "Dernière situation mondiale et les 10 pays les plus touchés",
+  "lastUpdate": "Dernière mise à jour : {{date}}",
+  "confirmed": "Confirmés",
+  "deaths": "Décès",
+  "recovered": "Guéris",
+  "chartTitle": "Top 10 des pays – Cas confirmés",
+  "today": "aujourd'hui",
+  "viewAll": "Voir tous les pays",
+  "footer": "Données fournies par votre API – actualisées toutes les 5 min"
+},
+"analytics": {
+    "title": "Analyse COVID-19",
+    "subtitle": "Tableaux de bord interactifs pour les analystes de données",
+    "status": {
+      "loading": "Chargement des données d’analyse…",
+      "error": "Erreur lors du chargement des données d’analyse. Veuillez réessayer plus tard.",
+      "noData": "Aucune donnée disponible",
+      "noRateData": "Aucune donnée de taux disponible",
+      "calculating": "Calcul des taux en cours…"
+    },
+    "buttons": {
+      "retry": "Réessayer",
+      "refresh": "Rafraîchir",
+      "test": "Tester les points d'accès"
+    },
+    "charts": {
+      "total": "Total de {{metric}} par pays",
+      "new": "Nouveaux {{metric}} par pays",
+      "top10Total": "Top 10 des pays avec les totaux les plus élevés",
+      "top10New": "Top 10 des pays avec le plus de nouveaux cas (récemment)",
+      "ratesTitle": "Mortalité vs Rétablissement (Top 10 des cas)",
+      "ratesDescription": "Taux relatifs aux cas confirmés – une mortalité plus faible est meilleure"
+    },
+    "tabs": {
+      "cases": "Cas",
+      "deaths": "Décès",
+      "recovered": "Rétablis"
+    },
+    "legend": {
+      "mortality": "Mortalité %",
+      "recovery": "Guérison %"
+    },
+    "footer": "Tableau de bord d'analyse COVID-19 – Propulsé par FastAPI & React"
+  },
+  "data": {
+  "title": "Gestion des données",
+  "filter": "Filtrer",
+  "sortBy": "Trier par",
+  "search": "Rechercher des pays...",
+  "footer": "Tableau de bord COVID‑19 – Gestion des données",
+  "error": "Erreur lors du chargement des données.",
+  "loading": "Chargement…",
+  "columns": {
+    "country": "Pays",
+    "totalCases": "Total des cas",
+    "totalDeaths": "Total des décès",
+    "totalRecovered": "Total rétablis",
+    "actions": "Actions"
   }
+},
+"actions": {
+  "save": "Enregistrer",
+  "cancel": "Annuler"
+},
+"form": {
+  "title": "Paramètres de prédiction",
+  "subtitle": "Saisissez les données pour générer une prédiction",
+  "fields": {
+    "date": "Date",
+    "WHO_Region": "Région OMS",
+    "Country": "Pays",
+    "Confirmed": "Confirmés",
+    "Deaths": "Décès",
+    "Recovered": "Guéris",
+    "Active": "Actifs",
+    "New_cases": "Nouveaux cas",
+    "New_recovered": "Nouveaux guéris"
+  },
+  "selectRegion": "Sélectionner une région OMS",
+  "selectCountry": "Sélectionner un pays",
+  "selectLanguage": "Sélectionner une langue",
+  "loading": "Calcul en cours...",
+  "button": "Générer la prédiction"
+},
+"result": {
+  "predictedDeaths": "Décès prédits"
+},
+"country": {
+  "title": "Informations sur le pays",
+  "name": "Pays",
+  "region": "Région OMS",
+  "date": "Date de prédiction",
+  "updated": "Dernière mise à jour"
+},
+"chart": {
+  "title": "Visualisation des taux (%)",
+  "deaths": "Décès",
+  "recovered": "Guéris"
+},
+"empty": {
+  "title": "Prêt pour la prédiction",
+  "subtitle": "Saisissez vos paramètres puis cliquez sur « Générer la prédiction » pour commencer"
+}
+
+
+
+
+
+
 }
 

@@ -1,0 +1,133 @@
+{
+  "form": {
+    "title": "Prediction Settings",
+    "subtitle": "Enter the data to generate a prediction",
+    "fields": {
+      "date": "Date",
+      "WHO_Region": "WHO Region",
+      "Country": "Country",
+      "Confirmed": "Confirmed",
+      "Deaths": "Deaths",
+      "Recovered": "Recovered",
+      "Active": "Active",
+      "New_cases": "New Cases",
+      "New_recovered": "New Recovered"
+    },
+    "selectRegion": "Select WHO region",
+    "selectCountry": "Select country",
+    "selectLanguage": "Select language",
+    "loading": "Calculating...",
+    "button": "Generate Prediction"
+  },
+  "empty": {
+    "title": "Ready for prediction",
+    "subtitle": "Enter your parameters and click \"Generate Prediction\" to start"
+  },
+  "error": {
+    "prediction": "Error during prediction 😢",
+    "metadata": "Failed to load metadata"
+  },
+  "result": {
+    "predictedDeaths": "Predicted Deaths"
+  },
+  "country": {
+    "title": "Country Information",
+    "name": "Country",
+    "region": "WHO Region",
+    "date": "Prediction Date",
+    "updated": "Last update"
+  },
+  "chart": {
+    "title": "Rates Visualization (%)",
+    "deaths": "Deaths",
+    "recovered": "Recovered"
+  },
+  "countries_page": {
+    "title": "Countries",
+    "confirmed": "Confirmed",
+    "deaths": "Deaths",
+    "new": "new",
+    "search_placeholder": "Search countries…"
+  },
+  "dashboard": {
+    "title": "COVID-19 Dashboard",
+    "subtitle": "Latest global status and the 10 most-affected countries",
+    "lastUpdate": "Last updated: {{date}}",
+    "confirmed": "Confirmed",
+    "deaths": "Deaths",
+    "recovered": "Recovered",
+    "chartTitle": "Top 10 Countries – Confirmed Cases",
+    "viewAll": "View all countries",
+    "today": "today",
+    "footer": "Data powered by your API – refreshed every 5 min"
+  },
+  "analytics": {
+    "charts": {
+      "total": "Total {{metric}} by Country",
+      "new": "New {{metric}} by Country",
+      "top10Total": "Top 10 countries with highest totals",
+      "top10New": "Top 10 countries with highest new counts (latest)",
+      "ratesTitle": "Mortality vs Recovery (Top 10 Cases)",
+      "ratesDescription": "Rates relative to confirmed cases – lower mortality is better"
+    },
+    "legend": {
+      "mortality": "Mortality %",
+      "recovery": "Recovery %"
+    },
+    "status": {
+      "noData": "No data available",
+      "noRateData": "No rate data available",
+      "calculating": "Calculating rates…",
+      "loading": "Loading analytics data…",
+      "error": "Failed to load analytics data. Please try again later."
+    },
+    "tabs": {
+      "cases": "Cases",
+      "deaths": "Deaths",
+      "recovered": "Recovered"
+    },
+    "buttons": {
+      "retry": "Retry",
+      "refresh": "Refresh",
+      "test": "Test Endpoints"
+    },
+    "title": "COVID-19 Analytics",
+    "subtitle": "Interactive dashboards for data analysts",
+    "footer": "COVID-19 Analytics Dashboard – Powered by FastAPI & React"
+  },
+  "data": {
+    "title": "Data Management",
+    "filter": "Filter",
+    "sortBy": "Sort by",
+    "search": "Search countries...",
+    "footer": "COVID‑19 Dashboard – Data Management",
+    "error": "Error while loading data.",
+    "loading": "Loading...",
+    "columns": {
+      "country": "Country",
+      "totalCases": "Total Cases",
+      "totalDeaths": "Total Deaths",
+      "totalRecovered": "Total Recovered",
+      "actions": "Actions"
+    }
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "prediction": {
+  "title": "Predict",
+  "pageTitle": "Predict new Covid deaths"
+},
+"sidebar": {
+  "dashboard": "Dashboard",
+  "countries": "Countries",
+  "analytics": "Analytics",
+  "dataManagement": "Data Management",
+  "prediction": "Prediction",
+  "logout": "Logout",
+  "navigation": "Navigation",
+  "management": "Management"
+}
+
+}
