@@ -22,6 +22,11 @@ venv/
 .env
 .env.*
 
+Server/venv312/
+venv*/
+*.pyc
+__pycache__/
+
 # VSCode & system files
 .vscode/
 .DS_Store
