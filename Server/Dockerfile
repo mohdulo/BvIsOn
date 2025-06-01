@@ -1,8 +1,10 @@
-FROM python:3.11.2-slim
+# ✅ Image de base Python
+FROM python:3.11.2
 
+# Dossier de travail dans le conteneur
 WORKDIR /app
 
-# Installer les dépendances système
+# ✅ Installer les dépendances système nécessaires
 RUN apt-get update && apt-get install -y \
     gcc \
     build-essential \
@@ -11,16 +13,19 @@ RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copier et installer les dépendances Python
-COPY requirements.txt .
-RUN python -m pip install --upgrade pip
-RUN python -m pip install -r requirements.txt
+# ✅ Copier uniquement requirements.txt en premier
+# Cela permet de tirer parti du cache Docker si le code change mais pas les dépendances
+COPY ./requirements.txt ./
 
-# Copier tout le projet
+# ✅ Installer les dépendances Python
+RUN pip install --upgrade pip \
+    && pip install --only-binary xgboost --prefer-binary --no-cache-dir -r requirements.txt
+
+# ✅ Copier ensuite tout le code source
 COPY . .
 
-# Afficher le contenu pour debug (optionnel mais utile)
-RUN echo "📂 Contenu dans /app :" && ls -la /app
+# ✅ Ouvrir le port exposé par FastAPI
+EXPOSE 8000
 
-# Définir la commande de lancement
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# ✅ Commande de démarrage (production-ready)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

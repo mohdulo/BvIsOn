@@ -1,14 +1,11 @@
-version: "3.9"
-
 services:
   backend:
     build:
       context: ./Server
+      dockerfile: Dockerfile
     container_name: backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./Server:/app
     depends_on:
       - db
     env_file:
@@ -19,11 +16,10 @@ services:
   frontend:
     build:
       context: ./Client
+      dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "5173:5173"
-    volumes:
-      - ./Client:/app
+      - "3000:80"
     depends_on:
       - backend
 
@@ -34,9 +30,9 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: pandemics
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: BvIsiOn
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
     volumes:
       - mysql_data:/var/lib/mysql
 

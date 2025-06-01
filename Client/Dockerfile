@@ -1,25 +1,18 @@
-FROM python:3.11.2-slim
+# Client/Dockerfile
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "10001" \
-    appuser
+COPY package*.json ./
+RUN npm ci
 
-# Installer les dépendances système nécessaires à pycosat, cffi, cryptography...
-RUN apt-get update && apt-get install -y \
-    gcc \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+COPY . .
 
-COPY requirements.txt .
+RUN npm run build
 
-RUN python -m pip install --upgrade pip
-RUN python -m pip install -r requirements.txt
+# Serveur Nginx pour servir les fichiers
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
