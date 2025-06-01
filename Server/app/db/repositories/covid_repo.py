@@ -8,7 +8,26 @@ from app.db.models.covid import CovidStat
 from app.schemas.covid import GlobalStats, CountrySummary
 
 
+# ------------------------------------------------------------------
+# Sous-requête : timestamp maxi pour chaque pays
+# ------------------------------------------------------------------
+def _latest_per_country(db: Session):
+    return (
+        db.query(
+            CovidStat.country.label("country"),
+            func.max(CovidStat.date_timestamp).label("max_ts"),
+        )
+        .group_by(CovidStat.country)
+        .subquery()
+    )
+
+
+# ------------------------------------------------------------------
+# GLOBAL
+# ------------------------------------------------------------------
 def get_global_stats(db: Session) -> GlobalStats:
+    latest = _latest_per_country(db)
+
     row = (
         db.query(
             func.sum(CovidStat.total_confirmed).label("confirmed"),
@@ -19,25 +38,39 @@ def get_global_stats(db: Session) -> GlobalStats:
             func.sum(CovidStat.new_recovered).label("new_recovered"),
             func.max(CovidStat.date_timestamp).label("max_ts"),
         )
+        .join(
+            latest,
+            (CovidStat.country == latest.c.country)
+            & (CovidStat.date_timestamp == latest.c.max_ts),
+        )
         .one()
     )
 
     data = dict(row._mapping)
-    # divise par 1000 si ton timestamp est en millisecondes
+    # 👉 Divise par 1000 si date_timestamp est en millisecondes
     data["last_updated"] = datetime.fromtimestamp(int(data.pop("max_ts")))
     return GlobalStats(**data)
 
 
+# ------------------------------------------------------------------
+# PAR PAYS
+# ------------------------------------------------------------------
 def get_countries_summary(db: Session) -> List[CountrySummary]:
+    latest = _latest_per_country(db)
+
     rows = (
         db.query(
             CovidStat.country.label("country"),
-            func.sum(CovidStat.total_confirmed).label("confirmed_total"),
-            func.sum(CovidStat.new_cases).label("confirmed_new"),
-            func.sum(CovidStat.total_deaths).label("deaths_total"),
-            func.sum(CovidStat.new_deaths).label("deaths_new"),
+            CovidStat.total_confirmed.label("confirmed_total"),
+            CovidStat.new_cases.label("confirmed_new"),
+            CovidStat.total_deaths.label("deaths_total"),
+            CovidStat.new_deaths.label("deaths_new"),
         )
-        .group_by(CovidStat.country)
+        .join(
+            latest,
+            (CovidStat.country == latest.c.country)
+            & (CovidStat.date_timestamp == latest.c.max_ts),
+        )
         .all()
     )
 

@@ -8,6 +8,7 @@
 //     <App />
 //   </React.StrictMode>
 // )
+import './i18n/i18n'; // S'assurer que le fichier est bien chargé
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
