@@ -20,7 +20,7 @@ __pycache__/
 # FastAPI backend (Python venv & env)
 venv/
 .env
-.env.*
+.env.* # à enlevé surrement
 
 # VSCode & system files
 .vscode/

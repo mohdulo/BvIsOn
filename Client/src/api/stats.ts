@@ -12,4 +12,5 @@ export interface GlobalStats {
 }
 
 export const fetchGlobalStats = () =>
-  api.get<GlobalStats>("/covid/global").then((res) => res.data);
+  api.get<GlobalStats>("http://localhost:8000/api/v1").then((res) => res.data);
+
