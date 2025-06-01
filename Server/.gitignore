@@ -22,10 +22,8 @@ venv/
 .env
 .env.*
 
+venv312/
 Server/venv312/
-venv*/
-*.pyc
-__pycache__/
 
 # VSCode & system files
 .vscode/
