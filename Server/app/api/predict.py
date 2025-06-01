@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.schemas.prediction import InputRow, PredictionOut
 import pickle
 import os
+
 # from datetime import datetime
 
 router = APIRouter()
