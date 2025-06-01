@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Filter, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   CountryData,
   fetchCountries,
@@ -7,7 +8,6 @@ import {
 } from "../api/manage";
 import CountryTable from "./CountryTable";
 
-/* util */
 const formatNumber = (n: number) => n.toLocaleString();
 
 interface SortConfig {
@@ -15,8 +15,9 @@ interface SortConfig {
   direction: "asc" | "desc";
 }
 
-/* ------------------------------------------------------------ */
 const DataManagement: React.FC = () => {
+  const { t } = useTranslation();
+
   const [countries, setCountries] = useState<CountryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,25 +26,22 @@ const DataManagement: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "country", direction: "asc" });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  /* edition */
   const [editCountryId, setEditCountryId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Omit<CountryData, "id"> | null>(null);
 
-  /* ---------------- initial fetch ---------------- */
   useEffect(() => {
     (async () => {
       try {
         setCountries(await fetchCountries());
       } catch (e) {
         console.error(e);
-        setError("Erreur lors du chargement des données.");
+        setError(t("data.error"));
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  /* ---------------- helpers ---------------- */
   const requestSort = (key: keyof CountryData) =>
     setSortConfig((prev) => ({
       key,
@@ -66,7 +64,6 @@ const DataManagement: React.FC = () => {
     return data;
   }, [countries, searchTerm, sortConfig]);
 
-  /* ---------------- edition ---------------- */
   const handleEditRow = (id: string) => {
     const c = countries.find((x) => x.id === id);
     if (!c) return;
@@ -96,7 +93,6 @@ const DataManagement: React.FC = () => {
     }
   };
 
-  /* ---------------- soft‑delete UI only ---------------- */
   const handleDeleteRow = (id: string) => {
     if (!window.confirm("Remove this country from the view? (DB intact)")) return;
     setCountries((cs) => cs.filter((c) => c.id !== id));
@@ -111,22 +107,21 @@ const DataManagement: React.FC = () => {
     }));
   };
 
-  /* ---------------- render guards ---------------- */
-  if (loading) return <p className="p-8">Chargement…</p>;
+  if (loading) return <p className="p-8">{t("data.loading")}</p>;
   if (error) return <p className="p-8 text-red-600">{error}</p>;
 
-  /* ---------------- JSX ---------------- */
   return (
     <div className="p-8">
-      {/* header & filter */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Data Management</h1>
+        <h1 className="text-3xl font-bold text-gray-800">{t("data.title")}</h1>
         <div className="relative">
           <button
             className="flex items-center px-4 py-2 bg-white border rounded-lg text-gray-700 hover:bg-gray-50"
             onClick={() => setShowFilterMenu((v) => !v)}
           >
-            <Filter size={18} className="mr-2" />Filter
+            <Filter size={18} className="mr-2" />
+            {t("data.filter")}
             <ChevronDown size={14} className="ml-2" />
           </button>
           {showFilterMenu && (
@@ -140,7 +135,7 @@ const DataManagement: React.FC = () => {
                     setShowFilterMenu(false);
                   }}
                 >
-                  Sort by {k}
+                  {t("data.sortBy")} {t(`data.columns.${k}`)}
                 </button>
               ))}
             </div>
@@ -148,7 +143,7 @@ const DataManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* search */}
+      {/* Search */}
       <div className="mb-6 flex justify-end">
         <div className="relative w-64">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -156,7 +151,7 @@ const DataManagement: React.FC = () => {
           </div>
           <input
             type="text"
-            placeholder="Search countries..."
+            placeholder={t("data.search")}
             className="pl-10 pr-4 py-2 w-full border rounded-lg"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -164,7 +159,7 @@ const DataManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* table */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <CountryTable
           countries={filteredAndSortedCountries}
@@ -181,7 +176,9 @@ const DataManagement: React.FC = () => {
         />
       </div>
 
-      <footer className="mt-16 pt-8 border-t text-center text-gray-500 text-sm">COVID‑19 Dashboard – Data Management</footer>
+      <footer className="mt-16 pt-8 border-t text-center text-gray-500 text-sm">
+        {t("data.footer")}
+      </footer>
     </div>
   );
 };
