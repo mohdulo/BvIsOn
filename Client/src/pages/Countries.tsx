@@ -1,4 +1,5 @@
 // Client/src/pages/Countries.tsx
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,6 +10,7 @@ const Countries: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     (async () => {
@@ -34,14 +36,14 @@ const Countries: React.FC = () => {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Countries</h1>
+      <h1 className="text-3xl font-bold mb-6">{t('countries_page.title')}</h1>
 
       <div className="relative w-full mb-8">
         <Search size={18} className="absolute left-3 top-3 text-gray-400" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search countries…"
+          placeholder={t('countries_page.search_placeholder')}
           className="pl-10 pr-4 py-2 w-full border rounded-lg"
         />
       </div>
@@ -58,21 +60,21 @@ const Countries: React.FC = () => {
 
               <div className="flex">
                 <div className="w-1/2">
-                  <p className="text-sm text-gray-600">Confirmed</p>
+                  <p className="text-sm text-gray-600">{t('countries_page.confirmed')}</p>
                   <p className="text-xl font-bold">
                     {c.confirmed_total.toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-500">
-                    +{c.confirmed_new.toLocaleString()} new
+                    +{c.confirmed_new.toLocaleString()} {t('countries_page.new')}
                   </p>
                 </div>
                 <div className="w-1/2">
-                  <p className="text-sm text-gray-600">Deaths</p>
+                  <p className="text-sm text-gray-600">{t('countries_page.deaths')}</p>
                   <p className="text-xl font-bold text-red-600">
                     {c.deaths_total.toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-500">
-                    +{c.deaths_new.toLocaleString()} new
+                    +{c.deaths_new.toLocaleString()} {t('countries_page.new')}
                   </p>
                 </div>
               </div>

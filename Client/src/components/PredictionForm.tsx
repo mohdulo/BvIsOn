@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import i18n from "../i18n/i18n"; 
 import {
   HeartPulse,
   AlertTriangle,
@@ -15,12 +16,8 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import { predict, InputRow, getMetadata, Metadata } from "../api/predict";
-
-/*
- * Ajout du calcul des taux Décès / Guérisons (Recovered) en pourcentage des cas confirmés.
- * Un graphique à deux barres affiche ces taux.
- */
 
 const emptyRow: InputRow = {
   date: "",
@@ -35,6 +32,7 @@ const emptyRow: InputRow = {
 };
 
 export default function PredictionPage() {
+  const { t } = useTranslation();
   const [form, setForm] = useState<InputRow>(emptyRow);
   const [metadata, setMetadata] = useState<Metadata>({
     who_regions: [],
@@ -46,19 +44,16 @@ export default function PredictionPage() {
   const [predictedDeaths, setPredictedDeaths] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  /* ------------------ Métadonnées OMS ------------------ */
   useEffect(() => {
     getMetadata()
       .then((data) => setMetadata(data))
-      .catch(() => setError("Impossible de charger les métadonnées"));
-  }, []);
+      .catch(() => setError(t("error.metadata")));
+  }, [t]);
 
-  /* ------------------ Handlers ------------------ */
   const handleChange =
     (key: keyof InputRow) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const value = e.target.value;
-
       if (key === "WHO_Region") {
         setForm({ ...form, WHO_Region: value, Country: "" });
         setAvailableCountries(metadata.countries_by_region[value] || []);
@@ -78,41 +73,36 @@ export default function PredictionPage() {
       const res = await predict(form);
       setPredictedDeaths(res.pred_new_deaths);
       setSubmitted(true);
-    } catch (err) {
-      setError("Error during prediction 😢");
+    } catch {
+      setError(t("error.prediction"));
     } finally {
       setLoading(false);
     }
   }
 
-  /* ------------------ Calcul des taux ------------------ */
   const confirmed = form.Confirmed;
   const deathRate = confirmed > 0 && predictedDeaths !== null ? (predictedDeaths / confirmed) * 100 : 0;
   const recoveredRate = confirmed > 0 ? (form.Recovered / confirmed) * 100 : 0;
 
-  /* ------------------ Style helpers ------------------ */
   const inputClass =
     "border rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
   const labelClass = "text-sm font-semibold text-gray-700 mb-1 capitalize";
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      {/* ------------- FORMULAIRE ------------- */}
       <aside className="w-full md:w-[380px] bg-white shadow-2xl">
         <div className="bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white px-6 py-5 rounded-b-3xl">
           <h2 className="text-lg font-bold flex items-center gap-2">
-            <HeartPulse className="w-5 h-5" /> Prediction Settings
+            <HeartPulse className="w-5 h-5" /> {t("form.title")}
           </h2>
-          <p className="text-xs opacity-80 mt-1">
-            Enter the data to generate a prediction
-          </p>
+          <p className="text-xs opacity-80 mt-1">{t("form.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {(Object.keys(emptyRow) as (keyof InputRow)[]).map((key) => (
             <div key={key} className="flex flex-col">
               <label htmlFor={key} className={labelClass}>
-                {key.replace(/_/g, " ")}
+                {t(`form.fields.${key}`)}
               </label>
 
               {key === "WHO_Region" ? (
@@ -123,7 +113,7 @@ export default function PredictionPage() {
                   required
                   className={inputClass}
                 >
-                  <option value="">Select WHO region</option>
+                  <option value="">{t("form.selectRegion")}</option>
                   {metadata.who_regions.map((r) => (
                     <option key={r} value={r}>
                       {r}
@@ -139,7 +129,7 @@ export default function PredictionPage() {
                   disabled={!form.WHO_Region}
                   className={inputClass + " disabled:opacity-50"}
                 >
-                  <option value="">Select country</option>
+                  <option value="">{t("form.selectCountry")}</option>
                   {availableCountries.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -165,12 +155,11 @@ export default function PredictionPage() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-fuchsia-700 transition-all disabled:opacity-50"
           >
-            {loading ? "Calculating..." : "📉 Generate Prediction"}
+            {loading ? t("form.loading") : `📉 ${t("form.button")}`}
           </button>
         </form>
       </aside>
 
-      {/* ------------- DASHBOARD ------------- */}
       <main className="flex-1 p-6 md:p-10">
         {!submitted ? (
           <EmptyState />
@@ -178,11 +167,10 @@ export default function PredictionPage() {
           <div className="space-y-8">
             <MetricCard
               icon={AlertTriangle}
-              label="Predicted Deaths"
+              label={t("result.predictedDeaths")}
               value={predictedDeaths ?? 0}
               accent="red"
             />
-
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <CountryInfo
                 country={form.Country}
@@ -200,34 +188,26 @@ export default function PredictionPage() {
   );
 }
 
-/* ----------- Sous‑composants ----------- */
+/* Sub-components */
 function EmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="border-2 border-dashed rounded-xl h-full flex flex-col items-center justify-center text-gray-500">
       <Activity className="w-5 h-5 mb-4" />
-      <h3 className="text-lg font-semibold mb-1">Ready for prediction</h3>
-      <p className="text-sm max-w-sm text-center">
-        Enter your parameters and click "Generate Prediction" to start
-      </p>
+      <h3 className="text-lg font-semibold mb-1">{t("empty.title")}</h3>
+      <p className="text-sm max-w-sm text-center">{t("empty.subtitle")}</p>
     </div>
   );
 }
 
-interface MetricProps {
-  icon: React.ElementType;
-  label: string;
-  value: number;
-  accent: "red" | "orange" | "green" | "blue";
-}
-
-function MetricCard({ icon: Icon, label, value, accent }: MetricProps) {
-  const bg: Record<MetricProps["accent"], string> = {
+function MetricCard({ icon: Icon, label, value, accent }: any) {
+  const bg: any = {
     red: "bg-red-50",
     orange: "bg-orange-50",
     green: "bg-green-50",
     blue: "bg-blue-50",
   };
-  const text: Record<MetricProps["accent"], string> = {
+  const text: any = {
     red: "text-red-600",
     orange: "text-orange-600",
     green: "text-green-600",
@@ -247,15 +227,10 @@ function MetricCard({ icon: Icon, label, value, accent }: MetricProps) {
   );
 }
 
-interface InfoProps {
-  country: string;
-  region: string;
-  date: string;
-}
-
-function CountryInfo({ country, region, date }: InfoProps) {
+function CountryInfo({ country, region, date }: any) {
+  const { t } = useTranslation();
   const formattedDate = date
-    ? new Date(date).toLocaleDateString("fr-FR", {
+    ? new Date(date).toLocaleDateString(i18n.language, {
         day: "2-digit",
         month: "long",
         year: "numeric",
@@ -266,18 +241,18 @@ function CountryInfo({ country, region, date }: InfoProps) {
     <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col justify-between h-full">
       <div className="space-y-6">
         <h3 className="text-xl font-bold flex items-center gap-2">
-          <Globe className="w-5 h-5 text-indigo-600" /> Country Information
+          <Globe className="w-5 h-5 text-indigo-600" /> {t("country.title")}
         </h3>
 
         <dl className="space-y-4">
-          <Item icon={MapPin} label="Country" value={country || "-"} />
-          <Item icon={Globe} label="WHO Region" value={region || "-"} />
-          <Item icon={Calendar} label="Prediction Date" value={formattedDate} />
+          <Item icon={MapPin} label={t("country.name")} value={country || "-"} />
+          <Item icon={Globe} label={t("country.region")} value={region || "-"} />
+          <Item icon={Calendar} label={t("country.date")} value={formattedDate} />
         </dl>
       </div>
 
       <p className="text-xs text-center text-gray-400 mt-8">
-        Last update
+        {t("country.updated")}
         <br />
         {formattedDate}
       </p>
@@ -285,13 +260,7 @@ function CountryInfo({ country, region, date }: InfoProps) {
   );
 }
 
-interface ItemProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-}
-
-function Item({ icon: Icon, label, value }: ItemProps) {
+function Item({ icon: Icon, label, value }: any) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2 text-gray-600">
@@ -303,22 +272,17 @@ function Item({ icon: Icon, label, value }: ItemProps) {
   );
 }
 
-/* ---------------- Chart Taux Décès / Guérisons ---------------- */
-interface RatesProps {
-  deathRate: number;
-  recoveredRate: number;
-}
-
-function RatesChart({ deathRate, recoveredRate }: RatesProps) {
+function RatesChart({ deathRate, recoveredRate }: { deathRate: number; recoveredRate: number }) {
+  const { t } = useTranslation();
   const data = [
-    { name: "Deaths", value: Number(deathRate.toFixed(2)) },
-    { name: "Recovered", value: Number(recoveredRate.toFixed(2)) },
+    { name: t("chart.deaths"), value: Number(deathRate.toFixed(2)) },
+    { name: t("chart.recovered"), value: Number(recoveredRate.toFixed(2)) },
   ];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 h-full">
       <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <AlertTriangle className="w-5 h-5 text-red-600" /> Rates Visualization (%)
+        <AlertTriangle className="w-5 h-5 text-red-600" /> {t("chart.title")}
       </h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>

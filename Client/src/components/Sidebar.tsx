@@ -1,5 +1,6 @@
 // src/components/Sidebar.tsx
 import React, { JSX } from "react";
+import { useTranslation } from "react-i18next";
 import SidebarLink from "./SidebarLink";
 import {
   LayoutDashboard,
@@ -21,49 +22,49 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
-  const { user } = useAuth(); // récupère le pays de l’utilisateur
+  const { user } = useAuth();
   const toggleSidebar = () => onToggle(!expanded);
+  const { t } = useTranslation();
 
   /** Configuration centralisée du menu */
   const links: {
     to: string;
     icon: JSX.Element;
-    label: string;
+    labelKey: string; // ← ici on met la clé de traduction
     key: RouteKey;
   }[] = [
     {
       to: "/",
       icon: <LayoutDashboard size={20} />,
-      label: "Dashboard",
+      labelKey: "sidebar.dashboard",
       key: "dashboard",
     },
     {
       to: "/countries",
       icon: <Globe size={20} />,
-      label: "Countries",
+      labelKey: "sidebar.countries",
       key: "countries",
     },
     {
       to: "/analytics",
       icon: <BarChart size={20} />,
-      label: "Analytics",
+      labelKey: "sidebar.analytics",
       key: "analytics",
     },
     {
       to: "/data-management",
       icon: <Database size={20} />,
-      label: "Data Management",
+      labelKey: "sidebar.dataManagement",
       key: "data-management",
     },
     {
       to: "/prediction",
       icon: <PercentDiamondIcon size={20} />,
-      label: "Prediction",
+      labelKey: "sidebar.prediction",
       key: "prediction",
     },
   ];
 
-  /** Filtrage des liens selon les permissions */
   const visibleLinks = links.filter((link) =>
     canAccess(user.country, link.key)
   );
@@ -90,17 +91,17 @@ const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
       <nav className="py-4 flex-1 overflow-y-auto">
         {expanded && (
           <div className="px-4 py-2 text-xs uppercase text-gray-500 font-semibold">
-            Navigation
+            {t("sidebar.navigation")}
           </div>
         )}
 
         <ul className="space-y-2 px-2">
-          {visibleLinks.map(({ to, icon, label }) => (
+          {visibleLinks.map(({ to, icon, labelKey }) => (
             <SidebarLink
               key={to}
               to={to}
               icon={icon}
-              label={label}
+              label={t(labelKey)} // 👈 traduit dynamiquement
               expanded={expanded}
             />
           ))}
@@ -115,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
           } py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors group`}
         >
           <LogOut size={20} className={expanded ? "mr-3" : ""} />
-          {expanded && <span>Logout</span>}
+          {expanded && <span>{t("sidebar.logout")}</span>}
         </button>
       </div>
     </aside>

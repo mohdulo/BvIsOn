@@ -1,9 +1,60 @@
 {
   "prediction": {
-    "title": "Prevedere i nuovi decessi per Covid"
+    "title": "Previsione",
+    "pageTitle": "Prevedi i nuovi decessi per Covid"
+  },
+  "form": {
+    "title": "Impostazioni di previsione",
+    "subtitle": "Inserisci i dati per generare una previsione",
+    "fields": {
+      "date": "Data",
+      "WHO_Region": "Regione OMS",
+      "Country": "Paese",
+      "Confirmed": "Confermati",
+      "Deaths": "Decessi",
+      "Recovered": "Guariti",
+      "Active": "Attivi",
+      "New_cases": "Nuovi casi",
+      "New_recovered": "Nuovi guariti"
+    },
+    "selectRegion": "Seleziona regione OMS",
+    "selectCountry": "Seleziona paese",
+    "selectLanguage": "Seleziona lingua",
+    "loading": "Calcolo in corso...",
+    "button": "Genera previsione"
+  },
+  "empty": {
+    "title": "Pronto per la previsione",
+    "subtitle": "Inserisci i tuoi parametri e clicca su \"Genera previsione\" per iniziare"
+  },
+  "error": {
+    "prediction": "Errore durante la previsione 😢",
+    "metadata": "Impossibile caricare i metadati"
+  },
+  "result": {
+    "predictedDeaths": "Decessi previsti"
+  },
+  "country": {
+    "title": "Informazioni sul paese",
+    "name": "Paese",
+    "region": "Regione OMS",
+    "date": "Data della previsione",
+    "updated": "Ultimo aggiornamento"
+  },
+  "chart": {
+    "title": "Visualizzazione delle percentuali (%)",
+    "deaths": "Decessi",
+    "recovered": "Guariti"
   },
   "sidebar": {
-    "prediction": "Previsione",
-    "dashboard": "Cruscotto"
-  }
+  "dashboard": "Cruscotto",
+  "countries": "Paesi",
+  "analytics": "Analisi",
+  "dataManagement": "Gestione dati",
+  "prediction": "Previsione",
+  "logout": "Disconnettersi",
+  "navigation": "Navigazione",
+  "management": "Gestione"
+}
+
 }

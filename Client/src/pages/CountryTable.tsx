@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  ChevronUp,
-  ChevronDown,
-  Edit2,
-  Trash2,
-} from "lucide-react";
+import { ChevronUp, ChevronDown, Edit2, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CountryData } from "../api/manage";
 
 /* ------------------------------------------------------------------ */
@@ -49,7 +45,8 @@ const CountryTable: React.FC<Props> = ({
   onDeleteRow,
   formatNumber,
 }) => {
-  /* entête triable */
+  const { t } = useTranslation();
+
   const SortableHeader = ({
     title,
     column,
@@ -81,12 +78,12 @@ const CountryTable: React.FC<Props> = ({
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <SortableHeader title="Country" column="country" />
-            <SortableHeader title="Total Cases" column="totalCases" />
-            <SortableHeader title="Total Deaths" column="totalDeaths" />
-            <SortableHeader title="Total Recovered" column="totalRecovered" />
+            <SortableHeader title={t("data.columns.country")} column="country" />
+            <SortableHeader title={t("data.columns.totalCases")} column="totalCases" />
+            <SortableHeader title={t("data.columns.totalDeaths")} column="totalDeaths" />
+            <SortableHeader title={t("data.columns.totalRecovered")} column="totalRecovered" />
             <th className="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
-              Actions
+              {t("data.columns.actions")}
             </th>
           </tr>
         </thead>
@@ -148,13 +145,13 @@ const CountryTable: React.FC<Props> = ({
                       className="bg-black text-white px-3 py-1 rounded"
                       onClick={() => onSaveEdit(c.id)}
                     >
-                      Save
+                      {t("actions.save")}
                     </button>
                     <button
                       className="border border-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-50"
                       onClick={onCancelEdit}
                     >
-                      Cancel
+                      {t("actions.cancel")}
                     </button>
                   </div>
                 ) : (
