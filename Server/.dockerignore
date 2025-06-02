@@ -1,0 +1,31 @@
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Fichiers de log
+*.log
+
+# Environnements virtuels
+.venv/
+env/
+venv/
+
+# Fichiers d'environnement sensibles
+.env
+.env.*
+
+# Cache de pip
+pip-wheel-metadata/
+*.whl
+
+# Dossiers inutiles dans l'image
+node_modules/
+tests/__pycache__/
+.idea/
+.vscode/
+*.db
+
+# Modèle d'entraînement local (si non utilisé en prod)
+*.pkl
+*.joblib
