@@ -1,13 +1,13 @@
+// Client/src/components/SidebarLink.tsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity } from 'lucide-react'; // ou une autre si tu préfères
 
 interface SidebarLinkProps {
   to: string;
   icon: React.ReactNode;
   label: string;
   expanded: boolean;
-  onClick?: () => void; // Ajout d'un prop onClick optionnel
+  onClick?: () => void;
 }
 
 const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, expanded, onClick }) => {
@@ -19,14 +19,14 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, expanded, on
           flex items-center px-4 py-3 rounded-lg transition-colors
           ${isActive ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'}
         `}
-        onClick={onClick} // Utilisation du prop onClick
+        onClick={onClick}
       >
         <div className={expanded ? 'mr-3' : 'mx-auto'}>
           {icon}
         </div>
         {expanded && <span>{label}</span>}
       </NavLink>
-      
+
       {/* Tooltip for collapsed state */}
       {!expanded && (
         <div className="absolute left-20 top-0 w-auto p-2 min-w-max scale-0 rounded-md 
