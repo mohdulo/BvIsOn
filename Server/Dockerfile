@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
 COPY ./requirements.txt ./
 
 # ✅ Installer les dépendances Python
-RUN pip install --upgrade pip \
-    && pip install --only-binary xgboost --prefer-binary --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # ✅ Copier ensuite tout le code source
 COPY . .
