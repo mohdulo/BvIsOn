@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "prea11y": "npm run build",
+    "a11y": "start-server-and-test preview http://localhost:4173 pa11y-ci"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.4",
@@ -25,6 +27,7 @@
     "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
+    "@aarongoldenthal/pa11y-ci": "^4.6.2",
     "@eslint/js": "^9.22.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -38,9 +41,13 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
+    "pa11y": "^9.0.0",
+    "puppeteer": "^22.15.0",
+    "start-server-and-test": "^2.0.12",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
     "vite": "^6.3.1",
-    "vitest": "^3.1.4"
+    "vitest": "^3.1.4",
+    "wait-on": "^8.0.3"
   }
 }

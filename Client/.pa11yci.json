@@ -1,0 +1,20 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 15000,
+    "includeWarnings": true,
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+    }
+  },
+  "urls": [
+    "http://localhost:4173/",
+    "http://localhost:4173/about"         
+  ],
+  "thresholds": {
+    "errors": 0,
+    "warnings": 5
+  },
+  "reporter": "html",
+  "output": "reports/pa11y-report.html"
+}
