@@ -1,0 +1,5 @@
+# docker-compose.override.yaml
+services:
+  db:
+    ports:
+      - "3307:3306"  # redirige 3306 dans le conteneur vers 3307 en local
