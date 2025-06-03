@@ -56,7 +56,7 @@ jobs:
       - name: Load model and test prediction
         run: |
           python - <<'PYCODE'
-          import pickle, sys, pandas as pd, numpy as np, warnings
+           import pickle, sys, numpy as np, xgboost as xgb
 
           model_path = "Server/app/models/pipeline.pkl"
 
@@ -68,36 +68,23 @@ jobs:
               print(f"❌ Unable to load model from {model_path}: {e}")
               sys.exit(1)
 
+           # ------------------------------------------------------------------
+          # Prédiction robuste : on utilise directement le Booster XGBoost
           # ------------------------------------------------------------------
-          # Crée un échantillon factice avec les bonnes colonnes pour XGBoost
-          # ------------------------------------------------------------------
-          feature_names = None
           try:
-              # Cas XGB* wrapper
-              if hasattr(model, "get_booster"):
+              if hasattr(model, "get_booster"):          # Cas pipeline scikit-learn
                   booster = model.get_booster()
-                  feature_names = booster.feature_names
-              # Cas scikit-learn >=1.0
-              if not feature_names and hasattr(model, "feature_names_in_"):
-                  feature_names = list(model.feature_names_in_)
-          except Exception:
-              pass
-
-          if feature_names:
-              X_dummy = pd.DataFrame([0] * len(feature_names)).T
-              X_dummy.columns = feature_names
-          elif hasattr(model, "n_features_in_"):
-              X_dummy = np.zeros((1, model.n_features_in_))
-          else:
-              X_dummy = [[0]]
-
-          try:
-              _ = model.predict(X_dummy)
+                  n_feats = booster.num_features()
+                  dmat = xgb.DMatrix(np.zeros((1, n_feats), dtype=np.float32))
+                  booster.predict(dmat)
+              else:                                      # Cas modèle “pur” scikit-learn
+                  n_feats = getattr(model, "n_features_in_", 1)
+                  model.predict(np.zeros((1, n_feats), dtype=np.float32))
               print("✅ predict() ran successfully")
           except Exception as e:
               print(f"❌ Model loaded, but prediction failed: {e}")
               sys.exit(1)
-          PYCODE
+           PYCODE
 
   # Job 3: Tests d’intégration frontend (React/Vite + Vitest)
   frontend-tests:
