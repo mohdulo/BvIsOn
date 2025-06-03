@@ -6,6 +6,7 @@ const api = axios.create({
     `${import.meta.env.VITE_API_URL_ROOT}/api/v1`,  // <-- on concatène ici
 });
 
+
 export interface CountrySummary {
   id: string;
   country: string;

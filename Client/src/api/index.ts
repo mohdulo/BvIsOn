@@ -20,7 +20,7 @@ api.interceptors.request.use(
     if (token) {
       // S'assurer que les headers existent
       if (!config.headers) {
-        config.headers = {};
+        config.headers = new axios.AxiosHeaders();
       }
       
       // Ajouter le token Bearer
