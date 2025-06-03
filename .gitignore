@@ -1,36 +1,60 @@
-# Node modules (React frontend)
-**/node_modules/
-**/build/
-**/.env.local
-**/.env.development
-**/.env.production
+# ================================
+# 📁 Frontend (React/Vite)
+# ================================
+Client/node_modules/
+Client/build/
+Client/.env.local
+Client/.env.development
+Client/.env.test
 
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.so
-*.egg-info/
-*.egg
-*.log
-*.sqlite3
-*.db
+# (optionnel) Garde .env.production si utile
+#Client/.env.production
 
-# FastAPI backend (Python venv & env)
-venv/
-.env
-.env.*
+# ================================
+# 🐍 Backend (FastAPI/Python)
+# ================================
+Server/venv/
+Server/__pycache__/
+Server/*.py[cod]
+Server/*.pyo
+Server/*.pyd
+Server/*.so
+Server/*.egg-info/
+Server/*.egg
+Server/*.log
+Server/*.db
+Server/*.sqlite3
+Server/.env
+Server/.env.*
 
-# VSCode & system files
+# ================================
+# 🔧 Outils / Éditeurs
+# ================================
 .vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ================================
+# 🗂️ Système / OS
+# ================================
 .DS_Store
 Thumbs.db
 
-# Mac/Linux swap & lock files
+# ================================
+# 🔁 Fichiers temporaires / swap
+# ================================
 *.swp
 *.swo
-.lock
+*.tmp
+*.bak
+*.lock
 
-__pycache__/
-*.py[cod]
+# ================================
+# 🧪 Tests / couverture
+# ================================
+coverage/
+htmlcov/
+*.cover
+.pytest_cache/
+test-results/

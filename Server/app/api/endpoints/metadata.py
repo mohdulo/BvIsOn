@@ -4,6 +4,7 @@ import os
 
 router = APIRouter()
 
+
 @router.get("/metadata")
 def get_metadata():
     csv_path = os.path.join("app", "data", "data_cleaned_used.csv")
@@ -11,7 +12,7 @@ def get_metadata():
 
     # Nettoyage
     df = df.dropna(subset=["Country", "WHO Region"])
-    
+
     regions = sorted(df["WHO Region"].unique().tolist())
 
     # Mapping région -> [pays...]
@@ -20,7 +21,4 @@ def get_metadata():
         countries = df[df["WHO Region"] == region]["Country"].unique().tolist()
         region_country_map[region] = sorted(countries)
 
-    return {
-        "who_regions": regions,
-        "countries_by_region": region_country_map
-    }
+    return {"who_regions": regions, "countries_by_region": region_country_map}

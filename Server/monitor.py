@@ -18,15 +18,25 @@ REPORT_DIR = BASE_DIR / "app" / "monitoring"
 REF_DATA = BASE_DIR / "training_sample.csv"  # référence pour drift
 
 # Variables du modèle
-FEATURES = ['Confirmed_log', 'Confirmed_log_ma_14', 'cases_per_million',
-            'tests_per_million', 'population', 'density', 'Lat', 'Long']
+FEATURES = [
+    "Confirmed_log",
+    "Confirmed_log_ma_14",
+    "cases_per_million",
+    "tests_per_million",
+    "population",
+    "density",
+    "Lat",
+    "Long",
+]
 TARGET = "Deaths_log"
+
 
 # Évaluation
 def evaluate(y_true, y_pred):
     rmse = math.sqrt(mean_squared_error(y_true, y_pred))
     r2 = r2_score(y_true, y_pred)
     return rmse, r2
+
 
 def append_metrics(date_str, rmse, r2):
     METRICS_PATH.parent.mkdir(exist_ok=True)
@@ -36,11 +46,13 @@ def append_metrics(date_str, rmse, r2):
             f.write("date,rmse_log,r2\n")
         f.write(f"{date_str},{rmse:.4f},{r2:.4f}\n")
 
+
 def generate_report(ref_df, cur_df, date_str):
     report = Report(metrics=[DataDriftPreset(), RegressionPreset()])
     report.run(reference_data=ref_df, current_data=cur_df)
     REPORT_DIR.mkdir(exist_ok=True)
     report.save_html(REPORT_DIR / f"report_{date_str}.html")
+
 
 # Programme principal
 def main(batch_csv: str, rmse_threshold: float = 0.12):
@@ -66,9 +78,12 @@ def main(batch_csv: str, rmse_threshold: float = 0.12):
     if rmse > rmse_threshold:
         print("🚨 ALERTE : la RMSE dépasse le seuil !")
 
+
 # Exécution CLI
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", required=True, help="Chemin vers le batch CSV du jour")
+    parser.add_argument(
+        "--data", required=True, help="Chemin vers le batch CSV du jour"
+    )
     args = parser.parse_args()
     main(args.data)
