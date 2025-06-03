@@ -14,6 +14,7 @@ except Exception as e:
     print(f"❌ Unable to load model from {model_path}: {e}")
     sys.exit(1)
 
+
 # 2) Extraction de l'estimateur
 def get_estimator(obj):
     if hasattr(obj, "get_booster"):
@@ -21,6 +22,7 @@ def get_estimator(obj):
     if hasattr(obj, "named_steps") and "model" in obj.named_steps:
         return obj.named_steps["model"]
     return None
+
 
 est = get_estimator(model)
 
