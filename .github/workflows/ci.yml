@@ -133,6 +133,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Debug secrets
+        run: |
+          echo "SONAR_HOST_URL=$SONAR_HOST_URL"
+          echo "SONAR_TOKEN length=${#SONAR_TOKEN}"
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
