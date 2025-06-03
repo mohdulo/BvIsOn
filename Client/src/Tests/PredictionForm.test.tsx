@@ -5,6 +5,8 @@ import PredictionForm from "../components/PredictionForm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../api/predict";
 import '@testing-library/jest-dom'
+import { t } from 'i18next';
+
 // Mock des appels API
 vi.mock("../api/predict");
 
@@ -46,11 +48,11 @@ describe("PredictionForm", () => {
     fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
     fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
     fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
-    fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
-    fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
-    fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
-    fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
-    fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
+    fireEvent.change(screen.getByLabelText(t("form.fields.New_recovered")), { target: { value: "200" } });
+    fireEvent.change(screen.getByLabelText(t("form.fields.Active")), { target: { value: "790" } });
+    fireEvent.change(screen.getByLabelText(t('form.fields.New_cases')), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText(t("form.fields.Recovered")), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText(t("form.fields.date")), { target: { value: "2023-01-01" } });
 
     // Soumission
     fireEvent.click(screen.getByRole("button", { name: /predict/i })
@@ -78,9 +80,9 @@ describe("PredictionForm", () => {
   fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
   fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
   fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
-  fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
-  fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
-  fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
+  fireEvent.change(screen.getByLabelText(t("form.fields.New_cases")), { target: { value: "50" } });
+  fireEvent.change(screen.getByLabelText(t("form.fields.Recovered")), { target: { value: "30" } });
+  fireEvent.change(screen.getByLabelText(t("form.fields.date")), { target: { value: "2023-01-01" } });
 
   fireEvent.click(screen.getByRole("button", { name: /predict/i })
 );
@@ -120,9 +122,9 @@ fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" }
 fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
 fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
 fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
-fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
-fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
-fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
+fireEvent.change(screen.getByLabelText(t("form.fields.New_cases")), { target: { value: "50" } });
+fireEvent.change(screen.getByLabelText(t("form.fields.Recovered")), { target: { value: "30" } });
+fireEvent.change(screen.getByLabelText(t("form.fields.date")), { target: { value: "2023-01-01" } });
 
 
   const submitButton = screen.getByRole("button", { name: /predict/i })
