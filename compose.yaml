@@ -1,4 +1,9 @@
+version: "3.9"
+
 services:
+  # ────────────────────────────────
+  # 1) Back-end FastAPI
+  # ────────────────────────────────
   backend:
     build:
       context: ./Server
@@ -13,6 +18,9 @@ services:
     environment:
       - PYTHONPATH=/app
 
+  # ────────────────────────────────
+  # 2) Front-end React/Vite
+  # ────────────────────────────────
   frontend:
     build:
       context: ./Client
@@ -23,6 +31,9 @@ services:
     depends_on:
       - backend
 
+  # ────────────────────────────────
+  # 3) Base MySQL 8
+  # ────────────────────────────────
   db:
     image: mysql:8.0
     container_name: mysql
@@ -35,5 +46,35 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  # ────────────────────────────────
+  # 4) SonarQube Community
+  # ────────────────────────────────
+  sonarqube:
+    image: sonarqube:10.4-community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"            # UI + API
+    environment:
+      # désactive les checks elasticsearch (pas utiles en dev)
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      # si tu veux pré-configurer admin pwd => SONARQUBE_JDBC_* etc.
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    # sonarqube met ~2 Go en RAM ; ajuste si nécessaire
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
 volumes:
   mysql_data:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
