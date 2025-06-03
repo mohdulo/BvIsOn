@@ -10,7 +10,7 @@ jobs:
 
   # ✅ Job 1: Tests unitaires backend
   backend-tests:
-    name: Backend Unit Tests
+    name: tests unitaires Backend 
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -39,7 +39,7 @@ jobs:
 
   # ✅ Job 2: Test de chargement modèle ML
   ml-model-test:
-    name: ML Model Loading Test
+    name: Test de chargement modèle ML
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +56,7 @@ jobs:
 
   # ✅ Job 3: Intégration frontend
   frontend-tests:
-    name: Frontend Integration Tests
+    name: Tests d'integration frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
 
   # ✅ Job 4: Lint Python avec Black
   lint-python:
-    name: Lint Python with Black
+    name: Tests de lint Python
     runs-on: ubuntu-latest
 
     steps:
@@ -100,7 +100,7 @@ jobs:
 
   # ✅ Job 5: Test accessibilité avec Pa11y
   accessibility-test:
-    name: Accessibility Tests (Pa11y)
+    name: Tests d'accessibilité (Pa11y)
     runs-on: ubuntu-latest
     needs: [frontend-tests]
     steps:
