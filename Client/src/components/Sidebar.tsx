@@ -9,11 +9,11 @@ import {
   LogOut,
   Menu,
   X,
-  PercentDiamondIcon,
+  TrendingUp,
+  User
 } from "lucide-react";
-
 import { useAuth } from "../contexts/AuthContext";
-import { canAccess, RouteKey } from "../permissions";
+import { canAccess, RouteKey } from "../permissions";  // ✅ Importer permissions
 
 interface SidebarProps {
   expanded: boolean;
@@ -21,10 +21,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
-  const { user } = useAuth(); // récupère le pays de l’utilisateur
-  const toggleSidebar = () => onToggle(!expanded);
-
-  /** Configuration centralisée du menu */
+  const { user, logout } = useAuth();
+  
   const links: {
     to: string;
     icon: JSX.Element;
@@ -46,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
     {
       to: "/analytics",
       icon: <BarChart size={20} />,
-      label: "Analytics",
+      label: "Analytics", 
       key: "analytics",
     },
     {
@@ -57,15 +55,15 @@ const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
     },
     {
       to: "/prediction",
-      icon: <PercentDiamondIcon size={20} />,
+      icon: <TrendingUp size={20} />,
       label: "Prediction",
       key: "prediction",
     },
   ];
 
-  /** Filtrage des liens selon les permissions */
+  // ✅ Filtrer les liens selon les permissions du pays
   const visibleLinks = links.filter((link) =>
-    canAccess(user.country, link.key)
+    user ? canAccess(user.country, link.key) : false
   );
 
   return (
@@ -74,19 +72,38 @@ const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
         expanded ? "w-64" : "w-20"
       } min-h-screen bg-white text-black shadow-lg transition-all duration-300 flex flex-col flex-shrink-0`}
     >
-      {/* ---------- header ---------- */}
+      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {expanded && (
           <h1 className="text-xl font-semibold whitespace-nowrap">
-            Covid&nbsp;App
+            COVID Analytics
           </h1>
         )}
-        <button onClick={toggleSidebar} className="text-gray-400">
+        <button onClick={() => onToggle(!expanded)} className="text-gray-400">
           {expanded ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* ---------- nav ---------- */}
+      {/* User Info */}
+      {expanded && user && (
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.username}
+              </p>
+              <p className="text-xs text-gray-500 uppercase">
+                {user.role} - {user.country.toUpperCase()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
       <nav className="py-4 flex-1 overflow-y-auto">
         {expanded && (
           <div className="px-4 py-2 text-xs uppercase text-gray-500 font-semibold">
@@ -107,15 +124,23 @@ const Sidebar: React.FC<SidebarProps> = ({ expanded, onToggle }) => {
         </ul>
       </nav>
 
-      {/* ---------- logout (collé en bas) ---------- */}
+      {/* Logout */}
       <div className="px-2 py-4 border-t border-gray-200">
         <button
+          onClick={logout}
           className={`flex items-center w-full ${
             expanded ? "justify-start px-4" : "justify-center px-2"
-          } py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors group`}
+          } py-3 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors group`}
         >
           <LogOut size={20} className={expanded ? "mr-3" : ""} />
           {expanded && <span>Logout</span>}
+          
+          {!expanded && (
+            <div className="absolute left-20 w-auto p-2 min-w-max scale-0 rounded-md 
+              bg-gray-700 text-xs text-white group-hover:scale-100 transition-all duration-100 z-50">
+              Logout
+            </div>
+          )}
         </button>
       </div>
     </aside>

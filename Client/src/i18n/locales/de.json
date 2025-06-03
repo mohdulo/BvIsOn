@@ -1,12 +1,60 @@
 {
   "prediction": {
-    "title": "Vorhersage neuer Covid-Todesfälle"
+    "title": "Vorhersage",
+    "pageTitle": "COVID-Todesfälle vorhersagen"
+  },
+  "form": {
+    "title": "Vorhersage-Einstellungen",
+    "subtitle": "Geben Sie die Daten ein, um eine Vorhersage zu erstellen",
+    "fields": {
+      "date": "Datum",
+      "WHO_Region": "WHO-Region",
+      "Country": "Land",
+      "Confirmed": "Bestätigt",
+      "Deaths": "Todesfälle",
+      "Recovered": "Genesen",
+      "Active": "Aktiv",
+      "New_cases": "Neue Fälle",
+      "New_recovered": "Neu genesen"
+    },
+    "selectRegion": "WHO-Region auswählen",
+    "selectCountry": "Land auswählen",
+    "selectLanguage": "Sprache auswählen",
+    "loading": "Berechnung läuft...",
+    "button": "Vorhersage erstellen"
+  },
+  "empty": {
+    "title": "Bereit für Vorhersage",
+    "subtitle": "Geben Sie Ihre Parameter ein und klicken Sie auf \"Vorhersage erstellen\", um zu starten"
+  },
+  "error": {
+    "prediction": "Fehler bei der Vorhersage 😢",
+    "metadata": "Metadaten konnten nicht geladen werden"
+  },
+  "result": {
+    "predictedDeaths": "Vorhergesagte Todesfälle"
+  },
+  "country": {
+    "title": "Länderinformationen",
+    "name": "Land",
+    "region": "WHO-Region",
+    "date": "Vorhersagedatum",
+    "updated": "Letzte Aktualisierung"
+  },
+  "chart": {
+    "title": "Visualisierung der Raten (%)",
+    "deaths": "Todesfälle",
+    "recovered": "Genesen"
   },
   "sidebar": {
-    "prediction": "Vorhersage",
-    "dashboard": "Dashboard",
-    "countries": "Länder",
-    "analytics": "Analytik",
-    "dataManagement": "Datenverwaltung"
-  }
+  "dashboard": "Übersicht",
+  "countries": "Länder",
+  "analytics": "Analyse",
+  "dataManagement": "Datenverwaltung",
+  "prediction": "Vorhersage",
+  "logout": "Abmelden",
+  "navigation": "Navigation",
+  "management": "Verwaltung"
+}
+
 }

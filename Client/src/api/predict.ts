@@ -1,5 +1,5 @@
-// src/api/predict.ts
-import axios from "axios";
+// src/api/predict.ts - VERSION CORRIGÉE AVEC AUTHENTIFICATION
+import { api } from "./index";  // ✅ Utiliser l'API sécurisée au lieu d'axios direct
 
 export interface InputRow {
   Confirmed: number;
@@ -24,17 +24,38 @@ export interface PredictionOut {
   pred_new_deaths: number;
 }
 
-const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL_ROOT}/api/v1`,
-});
-
-export async function predict(row: InputRow) {
-  const { data } = await api.post<PredictionOut>("/predict", row);
-  return data;
+// ✅ Fonction de prédiction avec authentification
+export async function predict(row: InputRow): Promise<PredictionOut> {
+  try {
+    console.log('🔍 Making prediction request...');
+    const { data } = await api.post<PredictionOut>("/predict", row);
+    console.log('✅ Prediction successful:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Prediction error:', error);
+    
+    if (error.response?.status === 403 || error.response?.status === 401) {
+      throw new Error('Accès refusé. Authentification admin requise.');
+    }
+    
+    throw new Error(error.response?.data?.detail || 'Erreur lors de la prédiction');
+  }
 }
 
+// ✅ Fonction metadata avec authentification sécurisée
 export async function getMetadata(): Promise<Metadata> {
-  const res = await fetch("http://localhost:8000/api/v1/metadata");
-  if (!res.ok) throw new Error("Erreur récupération metadata");
-  return res.json();
+  try {
+    console.log('🔍 Fetching metadata...');
+    const response = await api.get<Metadata>("/metadata");  // ✅ Utilise l'API sécurisée
+    console.log('✅ Metadata received:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Metadata error:', error);
+    
+    if (error.response?.status === 403 || error.response?.status === 401) {
+      throw new Error('Accès refusé. Authentification admin requise.');
+    }
+    
+    throw new Error(error.response?.data?.detail || 'Erreur récupération metadata');
+  }
 }
