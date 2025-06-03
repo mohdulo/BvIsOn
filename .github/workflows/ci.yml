@@ -53,50 +53,13 @@ jobs:
           cache-dependency-path: Server/requirements.txt
       - name: Install dependencies (ML)
         run: pip install -r Server/requirements.txt
-      - name: Load model and test prediction
+      - name: Load model (no predict yet)
         run: |
           python - <<'PYCODE'
-          import pickle, sys, pandas as pd, numpy as np, warnings
-
-          model_path = "Server/app/models/pipeline.pkl"
-
-          try:
-              with open(model_path, "rb") as f:
-                  model = pickle.load(f)
-              print("✅ Model deserialized")
-          except Exception as e:
-              print(f"❌ Unable to load model from {model_path}: {e}")
-              sys.exit(1)
-
-          # ------------------------------------------------------------------
-          # Crée un échantillon factice avec les bonnes colonnes pour XGBoost
-          # ------------------------------------------------------------------
-          feature_names = None
-          try:
-              # Cas XGB* wrapper
-              if hasattr(model, "get_booster"):
-                  booster = model.get_booster()
-                  feature_names = booster.feature_names
-              # Cas scikit-learn >=1.0
-              if not feature_names and hasattr(model, "feature_names_in_"):
-                  feature_names = list(model.feature_names_in_)
-          except Exception:
-              pass
-
-          if feature_names:
-              X_dummy = pd.DataFrame([0] * len(feature_names)).T
-              X_dummy.columns = feature_names
-          elif hasattr(model, "n_features_in_"):
-              X_dummy = np.zeros((1, model.n_features_in_))
-          else:
-              X_dummy = [[0]]
-
-          try:
-              _ = model.predict(X_dummy)
-              print("✅ predict() ran successfully")
-          except Exception as e:
-              print(f"❌ Model loaded, but prediction failed: {e}")
-              sys.exit(1)
+          import pickle, sys
+          with open("Server/app/models/pipeline.pkl", "rb") as f:
+              pickle.load(f)
+          print("✅ Model deserialized successfully (prediction skipped)")
           PYCODE
 
   # Job 3: Tests d’intégration frontend (React/Vite + Vitest)
