@@ -54,7 +54,7 @@ api.interceptors.response.use(
       message: error.response?.data?.detail || error.message
     });
     
-    // Gestion spécifique des erreurs d'authentification
+    //  Gestion spécifique des erreurs d'authentification
     if (status === 401 || status === 403) {
       console.warn('🔒 Authentication error - clearing token and redirecting');
       

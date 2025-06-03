@@ -16,6 +16,7 @@ export interface CountrySummary {
   deaths_new: number;
 }
 
+
 export const fetchCountriesSummary = async (): Promise<CountrySummary[]> => {
   const { data } = await api.get<CountrySummary[]>('/covid/countries/summary');
   return data;
