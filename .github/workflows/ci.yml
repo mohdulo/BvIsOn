@@ -1,0 +1,93 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-analyze:
+    runs-on: ubuntu-latest
+
+    # Service MySQL pour le backend (disponible sur 127.0.0.1:3306):contentReference[oaicite:0]{index=0}
+    services:
+      db:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: BvIsiOn
+        ports:
+          - 3306:3306
+        options: >- 
+          --health-cmd="mysqladmin ping --silent" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configuration de Python pour le backend
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        working-directory: Server
+        run: |
+          python -m pip install --upgrade pip 
+          pip install -r requirements.txt
+
+      - name: Run backend unit tests (pytest)
+        working-directory: Server
+        env:
+          # Variables d'environnement pour la base de données de test
+          DB_HOST: 127.0.0.1
+          DB_NAME: testdb
+          DB_USER: root
+          DB_PASSWORD: rootpassword
+        run: pytest -q
+
+      - name: Test ML model pipeline
+        working-directory: Server
+        run: python app/tests/test_model_pipeline.py  # Script de l'étape 2
+
+      # Configuration de Node.js pour le frontend
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        working-directory: Client
+        run: npm ci
+
+      - name: Run frontend integration tests (Vitest)
+        working-directory: Client
+        run: npm run test:ci  # exécute vitest en mode CI (sans watch)
+
+      - name: Build frontend for production
+        working-directory: Client
+        run: npm run build
+
+      - name: Install Pa11y CLI
+        run: npm install -g pa11y-ci
+
+      - name: Accessibility audit with Pa11y
+        working-directory: Client/dist  # se placer dans le dossier de build
+        run: |
+          npx http-server -p 8080 -c-1 . &             # Démarrer un serveur statique sur le port 8080
+          sleep 5                                      # Attendre que le serveur soit prêt
+          pa11y-ci http://localhost:8080 --timeout 30  # Lancer Pa11y sur la page d'accueil
+          kill $(jobs -p)                              # Arrêter le serveur statique une fois le test fini
+
+      - name: SonarQube analysis
+        # Utilise l'image Docker du scanner SonarQube:contentReference[oaicite:1]{index=1}
+        uses: docker://sonarsource/sonar-scanner-cli:latest
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
