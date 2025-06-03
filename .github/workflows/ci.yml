@@ -16,7 +16,6 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: test_db
-        # Healthcheck pour attendre que MySQL soit prêt
         options: >-
           --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
           --health-interval 5s
@@ -33,10 +32,7 @@ jobs:
           cache-dependency-path: Server/requirements.txt
       - name: Install backend dependencies
         run: pip install -r Server/requirements.txt
-
-      # ----------------------------------------------------------------------
-      # Les tests Pytest ne sont pas encore prêts : on commente la commande.
-      # ----------------------------------------------------------------------
+      # Les tests Pytest ne sont pas encore prêts : on commente cette étape
       # - name: Run backend tests (Pytest)
       #   env:
       #     DATABASE_URL: mysql+pymysql://root:root@127.0.0.1:3306/test_db
@@ -60,21 +56,46 @@ jobs:
       - name: Load model and test prediction
         run: |
           python - <<'PYCODE'
-          import pickle, sys
-          import numpy as np
+          import pickle, sys, pandas as pd, numpy as np, warnings
+
           model_path = "Server/app/models/pipeline.pkl"
+
           try:
               with open(model_path, "rb") as f:
                   model = pickle.load(f)
+              print("✅ Model deserialized")
           except Exception as e:
               print(f"❌ Unable to load model from {model_path}: {e}")
               sys.exit(1)
+
+          # ------------------------------------------------------------------
+          # Crée un échantillon factice avec les bonnes colonnes pour XGBoost
+          # ------------------------------------------------------------------
+          feature_names = None
           try:
-              dummy_input = np.zeros((1, model.n_features_in_)) if hasattr(model, 'n_features_in_') else [[0]]
-              result = model.predict(dummy_input)
-              print("✅ Model loaded and predict() ran successfully. Output:", result)
+              # Cas XGB* wrapper
+              if hasattr(model, "get_booster"):
+                  booster = model.get_booster()
+                  feature_names = booster.feature_names
+              # Cas scikit-learn >=1.0
+              if not feature_names and hasattr(model, "feature_names_in_"):
+                  feature_names = list(model.feature_names_in_)
+          except Exception:
+              pass
+
+          if feature_names:
+              X_dummy = pd.DataFrame([0] * len(feature_names)).T
+              X_dummy.columns = feature_names
+          elif hasattr(model, "n_features_in_"):
+              X_dummy = np.zeros((1, model.n_features_in_))
+          else:
+              X_dummy = [[0]]
+
+          try:
+              _ = model.predict(X_dummy)
+              print("✅ predict() ran successfully")
           except Exception as e:
-              print("❌ Model loaded, but prediction failed:", e)
+              print(f"❌ Model loaded, but prediction failed: {e}")
               sys.exit(1)
           PYCODE
 
@@ -94,10 +115,7 @@ jobs:
       - name: Install frontend dependencies
         working-directory: Client
         run: npm ci
-
-      # ----------------------------------------------------------------------
-      # Les tests Vitest ne sont pas encore prêts : on commente la commande.
-      # ----------------------------------------------------------------------
+      # Les tests Vitest ne sont pas encore prêts : on commente cette étape
       # - name: Run frontend tests (Vitest)
       #   working-directory: Client
       #   run: npm run test
@@ -149,7 +167,7 @@ jobs:
         working-directory: Client
         run: |
           npm install -g wait-on pa11y-ci
-          npm run preview & 
-          npx wait-on http://localhost:4173 
-          npx pa11y-ci http://localhost:4173 
+          npm run preview &
+          npx wait-on http://localhost:4173
+          npx pa11y-ci http://localhost:4173
           kill $(jobs -p) || true
