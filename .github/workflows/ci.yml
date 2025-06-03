@@ -45,18 +45,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
           cache-dependency-path: Server/requirements.txt
+
       - name: Install dependencies (ML)
-        run: pip install -r Server/requirements.txt
+        run: |
+          pip install -r Server/requirements.txt
+          # ➜ ajoutez cette ligne si XGBoost n’est PAS dans requirements.txt
+          # pip install xgboost==1.7.6
+
       - name: Load model and test prediction
         run: |
           python - <<'PYCODE'
-           import pickle, sys, numpy as np, xgboost as xgb
+          import pickle, sys, numpy as np, xgboost as xgb
 
           model_path = "Server/app/models/pipeline.pkl"
 
@@ -68,7 +74,7 @@ jobs:
               print(f"❌ Unable to load model from {model_path}: {e}")
               sys.exit(1)
 
-           # ------------------------------------------------------------------
+          # ------------------------------------------------------------------
           # Prédiction robuste : on utilise directement le Booster XGBoost
           # ------------------------------------------------------------------
           try:
@@ -84,7 +90,7 @@ jobs:
           except Exception as e:
               print(f"❌ Model loaded, but prediction failed: {e}")
               sys.exit(1)
-           PYCODE
+          PYCODE
 
   # Job 3: Tests d’intégration frontend (React/Vite + Vitest)
   frontend-tests:
