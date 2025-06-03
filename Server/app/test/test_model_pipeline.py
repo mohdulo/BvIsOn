@@ -16,7 +16,8 @@ expected_output = np.array([0])  # par exemple, classe 0 attendue
 predicted_output = model.predict(X_test)
 
 # Vérifier que la prédiction correspond à la valeur attendue
-assert (predicted_output == expected_output).all(), \
-    f"Le modèle prédict {predicted_output}, attendu {expected_output}"
+assert (
+    predicted_output == expected_output
+).all(), f"Le modèle prédict {predicted_output}, attendu {expected_output}"
 
 print("Test du modèle ML réussi : prédiction =", predicted_output)

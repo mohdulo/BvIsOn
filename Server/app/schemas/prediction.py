@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class InputRow(BaseModel):
     Confirmed: int
     Deaths: int
@@ -13,7 +14,5 @@ class InputRow(BaseModel):
     WHO_Region: str
 
 
-
 class PredictionOut(BaseModel):
     pred_new_deaths: float
-

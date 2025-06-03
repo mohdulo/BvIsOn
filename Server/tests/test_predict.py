@@ -4,6 +4,7 @@ from app.main import app
 # Création d'un client de test pour simuler des requêtes à l'API
 client = TestClient(app)
 
+
 def test_predict_nominal():
     """
     Cas normal : on envoie des données valides, on attend un résultat correct.
@@ -17,7 +18,7 @@ def test_predict_nominal():
         "New_recovered": 10,
         "date": "2023-06-01T00:00:00",
         "Country": "France",
-        "WHO_Region": "Europe"
+        "WHO_Region": "Europe",
     }
     # Envoi d'une requête POST sur le endpoint de prédiction
     response = client.post("/api/v1/predict", json=payload)
@@ -25,6 +26,7 @@ def test_predict_nominal():
     assert response.status_code == 200
     # On vérifie que la clé attendue est dans la réponse
     assert "pred_new_deaths" in response.json()
+
 
 def test_predict_missing_field():
     """
@@ -40,10 +42,11 @@ def test_predict_missing_field():
         "New_recovered": 10,
         "date": "2023-06-01T00:00:00",
         "Country": "France",
-        "WHO_Region": "Europe"
+        "WHO_Region": "Europe",
     }
     response = client.post("/api/v1/predict", json=payload)
     assert response.status_code == 422  # Erreur de validation attendue
+
 
 def test_predict_invalid_type():
     """
@@ -59,10 +62,11 @@ def test_predict_invalid_type():
         "New_recovered": 10,
         "date": "2023-06-01T00:00:00",
         "Country": "France",
-        "WHO_Region": "Europe"
+        "WHO_Region": "Europe",
     }
     response = client.post("/api/v1/predict", json=payload)
     assert response.status_code == 422  # Erreur de validation attendue
+
 
 def test_predict_invalid_date():
     """
@@ -78,7 +82,7 @@ def test_predict_invalid_date():
         "New_recovered": 10,
         "date": "pas-une-date",  # Format invalide
         "Country": "France",
-        "WHO_Region": "Europe"
+        "WHO_Region": "Europe",
     }
     response = client.post("/api/v1/predict", json=payload)
     assert response.status_code == 422  # Erreur de validation attendue

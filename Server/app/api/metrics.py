@@ -2,8 +2,11 @@ import pathlib, pandas as pd
 from fastapi import APIRouter, HTTPException
 from app.schemas.metrics import Metric
 
-router = APIRouter(prefix="/api/v1",tags=["metrics"])
-METRICS_PATH = pathlib.Path(__file__).resolve().parent.parent / "monitoring" / "metrics.csv"
+router = APIRouter(prefix="/api/v1", tags=["metrics"])
+METRICS_PATH = (
+    pathlib.Path(__file__).resolve().parent.parent / "monitoring" / "metrics.csv"
+)
+
 
 @router.get("/metrics", response_model=list[Metric])
 def get_metrics():
