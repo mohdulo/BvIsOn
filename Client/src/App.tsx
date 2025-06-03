@@ -29,7 +29,6 @@ const itFlag = "https://flagcdn.com/w20/it.png";
 const AppContent: React.FC = () => {
   const [sidebarExpanded, setSidebarExpanded] = React.useState(true);
   const { isAuthenticated, isLoading, user, switchCountry } = useAuth();
-  const { t } = useTranslation(); // ✅ Utiliser seulement pour les traductions
 
   // ✅ Fonction pour changer de pays
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

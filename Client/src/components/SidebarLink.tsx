@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity } from 'lucide-react'; // ou une autre si tu préfères
 
 interface SidebarLinkProps {
   to: string;
