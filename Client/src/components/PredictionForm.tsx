@@ -1,3 +1,4 @@
+// src/components/PredictionForm.tsx - GESTION D'ERREURS AMÉLIORÉE
 import { useState, useEffect } from "react";
 import i18n from "../i18n/i18n"; 
 import {
@@ -41,44 +42,74 @@ export default function PredictionPage() {
   const [availableCountries, setAvailableCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
   const [predictedDeaths, setPredictedDeaths] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    getMetadata()
-      .then((data) => setMetadata(data))
-      .catch(() => setError(t("error.metadata")));
-  }, [t]);
-
-  const handleChange =
-    (key: keyof InputRow) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const value = e.target.value;
-      if (key === "WHO_Region") {
-        setForm({ ...form, WHO_Region: value, Country: "" });
-        setAvailableCountries(metadata.countries_by_region[value] || []);
-      } else if (key === "Country" || key === "date") {
-        setForm({ ...form, [key]: value });
-      } else {
-        setForm({ ...form, [key]: parseInt(value) });
+    const loadMetadata = async () => {
+      try {
+        setMetadataError(null);
+        console.log('🔍 Loading metadata...');
+        const data = await getMetadata();
+        setMetadata(data);
+        console.log('✅ Metadata loaded successfully');
+      } catch (err: any) {
+        console.error('❌ Metadata loading failed:', err);
+        setMetadataError(err.message || t("error.metadata"));
+        
+        // Si erreur d'authentification, rediriger
+        if (err.message?.includes('Accès refusé')) {
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 3000);
+        }
       }
     };
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setPredictedDeaths(null);
-    setLoading(true);
-    try {
-      const res = await predict(form);
-      setPredictedDeaths(res.pred_new_deaths);
-      setSubmitted(true);
-    } catch {
-      setError(t("error.prediction"));
-    } finally {
-      setLoading(false);
+    loadMetadata();
+  }, []);
+
+  const handleChange =
+  (key: keyof InputRow) =>
+  (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (key === "WHO_Region") {
+      setForm({ ...form, WHO_Region: value, Country: "" });
+      setAvailableCountries(metadata.countries_by_region[value] || []);
+    } else if (key === "Country" || key === "date") {
+      setForm({ ...form, [key]: value });
+    } else {
+      setForm({ ...form, [key]: parseInt(value) || 0 });
     }
+  };
+
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setError(null);
+  setPredictedDeaths(null);
+  setLoading(true);
+
+  try {
+    console.log("🔍 Submitting prediction...");
+    const res = await predict(form);
+    setPredictedDeaths(res.pred_new_deaths);
+    setSubmitted(true);
+    console.log("✅ Prediction completed:", res.pred_new_deaths);
+  } catch (err: any) {
+    console.error("❌ Prediction failed:", err);
+    setError(err.message || t("error.prediction"));
+
+    if (err.message?.includes("Accès refusé")) {
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 3000);
+    }
+  } finally {
+    setLoading(false);
   }
+}
+
 
   const confirmed = form.Confirmed;
   const deathRate = confirmed > 0 && predictedDeaths !== null ? (predictedDeaths / confirmed) * 100 : 0;
@@ -98,6 +129,18 @@ export default function PredictionPage() {
           <p className="text-xs opacity-80 mt-1">{t("form.subtitle")}</p>
         </div>
 
+        {/* Erreur metadata */}
+        {metadataError && (
+          <div className="m-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{metadataError}</p>
+            {metadataError.includes('Accès refusé') && (
+              <p className="text-red-500 text-xs mt-1">
+                Redirection vers la connexion dans 3 secondes...
+              </p>
+            )}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {(Object.keys(emptyRow) as (keyof InputRow)[]).map((key) => (
             <div key={key} className="flex flex-col">
@@ -111,9 +154,13 @@ export default function PredictionPage() {
                   value={form.WHO_Region}
                   onChange={handleChange("WHO_Region")}
                   required
-                  className={inputClass}
+                  disabled={metadata.who_regions.length === 0}
+                  className={`${inputClass} ${metadata.who_regions.length === 0 ? 'opacity-50' : ''}`}
                 >
                   <option value="">{t("form.selectRegion")}</option>
+                  <option value="">
+                    {metadata.who_regions.length === 0 ? 'Chargement...' : 'Choisir une région OMS'}
+                  </option>
                   {metadata.who_regions.map((r) => (
                     <option key={r} value={r}>
                       {r}
@@ -126,10 +173,13 @@ export default function PredictionPage() {
                   value={form.Country}
                   onChange={handleChange("Country")}
                   required
-                  disabled={!form.WHO_Region}
-                  className={inputClass + " disabled:opacity-50"}
+                  disabled={!form.WHO_Region || availableCountries.length === 0}
+                  className={`${inputClass} ${(!form.WHO_Region || availableCountries.length === 0) ? 'opacity-50' : ''}`}
                 >
                   <option value="">{t("form.selectCountry")}</option>
+                  <option value="">
+                    {!form.WHO_Region ? 'Sélectionner une région d\'abord' : 'Choisir un pays'}
+                  </option>
                   {availableCountries.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -152,8 +202,8 @@ export default function PredictionPage() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-fuchsia-700 transition-all disabled:opacity-50"
+            disabled={loading || metadata.who_regions.length === 0}
+            className="w-full bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-fuchsia-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? t("form.loading") : `📉 ${t("form.button")}`}
           </button>
@@ -182,7 +232,16 @@ export default function PredictionPage() {
           </div>
         )}
 
-        {error && <p className="text-red-600 text-center mt-4">{error}</p>}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{error}</p>
+            {error.includes('Accès refusé') && (
+              <p className="text-red-500 text-sm mt-1">
+                Redirection vers la connexion dans 3 secondes...
+              </p>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

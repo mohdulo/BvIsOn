@@ -23,7 +23,7 @@ const PERMISSIONS: Record<CountryCode, RouteKey[]> = {
     "countries",
     "country-detail",
     "analytics",
-    "data-management",
+    "prediction"
   ],
   ch: ["prediction"],
 };

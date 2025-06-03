@@ -15,7 +15,11 @@
       "Recovered": "Guariti",
       "Active": "Attivi",
       "New_cases": "Nuovi casi",
-      "New_recovered": "Nuovi guariti"
+      "New_recovered": "Nuovi guariti",
+      "selectRegion": "Seleziona una regione OMS",
+      "loadingRegions": "Caricamento regioni...",
+      "selectCountry": "Scegli un paese",
+      "selectRegionFirst": "Seleziona prima una regione"
     },
     "selectRegion": "Seleziona regione OMS",
     "selectCountry": "Seleziona paese",
@@ -54,7 +58,9 @@
   "prediction": "Previsione",
   "logout": "Disconnettersi",
   "navigation": "Navigazione",
-  "management": "Gestione"
+  "management": "Gestione",
+  "country": "Paese"
 }
 
 }
+

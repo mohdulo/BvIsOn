@@ -12,7 +12,8 @@
     "prediction": "Prédiction",
     "logout": "Déconnexion",
     "navigation": "Navigation",
-    "management": "Gestion"
+    "management": "Gestion",
+    "country": "Pays"
   },
   "countries_page": {
   "title": "Pays",
@@ -99,7 +100,11 @@
     "Recovered": "Guéris",
     "Active": "Actifs",
     "New_cases": "Nouveaux cas",
-    "New_recovered": "Nouveaux guéris"
+    "New_recovered": "Nouveaux guéris",
+    "selectRegion": "Choisir une région OMS",
+    "loadingRegions": "Chargement des régions...",
+    "selectCountry": "Choisir un pays",
+    "selectRegionFirst": "Sélectionner une région d'abord"
   },
   "selectRegion": "Sélectionner une région OMS",
   "selectCountry": "Sélectionner un pays",

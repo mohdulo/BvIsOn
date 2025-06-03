@@ -15,7 +15,11 @@
       "Recovered": "Genesen",
       "Active": "Aktiv",
       "New_cases": "Neue Fälle",
-      "New_recovered": "Neu genesen"
+      "New_recovered": "Neu genesen",
+      "selectRegion": "Wähle eine WHO-Region",
+      "loadingRegions": "Lade WHO-Regionen...",
+      "selectCountry": "Wähle ein Land",
+      "selectRegionFirst": "Wähle zuerst eine Region"
     },
     "selectRegion": "WHO-Region auswählen",
     "selectCountry": "Land auswählen",
@@ -54,7 +58,9 @@
   "prediction": "Vorhersage",
   "logout": "Abmelden",
   "navigation": "Navigation",
-  "management": "Verwaltung"
+  "management": "Verwaltung",
+  "country": "Land"
 }
 
 }
+

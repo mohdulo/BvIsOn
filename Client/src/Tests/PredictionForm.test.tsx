@@ -39,6 +39,8 @@ describe("PredictionForm", () => {
       expect(screen.getByText("Nigeria")).toBeInTheDocument();
     });
   });
+}); // 👈 fermeture du describe ici !
+
 
   it("remplit les champs numériques et soumet le formulaire", async () => {
     render(<PredictionForm />);
@@ -67,14 +69,15 @@ describe("PredictionForm", () => {
       expect(screen.getByText(/42/)).toBeInTheDocument();
     });
   });
+
   it("affiche un message d'erreur si l'API échoue", async () => {
-  // Simule une erreur côté API
-  (api.predict as any).mockRejectedValueOnce(new Error("API down"));
+    // Simule une erreur côté API
+    (api.predict as any).mockRejectedValueOnce(new Error("API down"));
 
-  render(<PredictionForm />);
+    render(<PredictionForm />);
 
-  fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
-  fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
+    fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
 
   fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
   fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
@@ -140,10 +143,54 @@ fireEvent.change(screen.getByLabelText(t("form.fields.date")), { target: { value
     expect(screen.getByText(/Predicted Deaths/i)).toBeInTheDocument();
   });
 
-  // Le bouton est à nouveau actif
-  expect(submitButton).not.toBeDisabled();
-});
+  it("n'envoie pas le formulaire si des champs sont vides", async () => {
+    render(<PredictionForm />);
 
+    fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
 
+    // Laisse tous les autres champs vides
 
+    const submitButton = screen.getByRole("button", { name: /prédiction/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      // Il ne doit PAS y avoir de texte "nouveaux décès prédits"
+      expect(screen.queryByText(/Décès Prédits/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("désactive le bouton pendant la prédiction", async () => {
+    // Simule un délai pour voir l'état intermédiaire
+    (api.predict as any).mockImplementation(() => new Promise(resolve =>
+      setTimeout(() => resolve({ pred_new_deaths: 42 }), 500)
+    ));
+
+    render(<PredictionForm />);
+
+    fireEvent.change(await screen.findByLabelText("WHO Region"), { target: { value: "Africa" } });
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "Senegal" } });
+    fireEvent.change(screen.getByLabelText("Confirmed"), { target: { value: "1000" } });
+    fireEvent.change(screen.getByLabelText("Deaths"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Recovered"), { target: { value: "200" } });
+    fireEvent.change(screen.getByLabelText("Active"), { target: { value: "790" } });
+    fireEvent.change(screen.getByLabelText("New cases"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("New recovered"), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText("date"), { target: { value: "2023-01-01" } });
+
+    const submitButton = screen.getByRole("button", { name: /prédiction/i });
+    fireEvent.click(submitButton);
+
+    // Dès le clic, le bouton doit être désactivé (et afficher "Calcul…")
+    expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveTextContent(/calcul/i);
+
+    // Attend la fin
+    await waitFor(() => {
+      expect(screen.getByText(/Décès Prédits/i)).toBeInTheDocument();
+    });
+
+    // Le bouton est à nouveau actif
+    expect(submitButton).not.toBeDisabled();
+  });
 });

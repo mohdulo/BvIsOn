@@ -11,7 +11,11 @@
       "Recovered": "Recovered",
       "Active": "Active",
       "New_cases": "New Cases",
-      "New_recovered": "New Recovered"
+      "New_recovered": "New Recovered",
+      "selectRegion": "Choose a WHO region",
+      "loadingRegions": "Loading regions...",
+      "selectCountry": "Choose a country",
+      "selectRegionFirst": "Select a region first"
     },
     "selectRegion": "Select WHO region",
     "selectCountry": "Select country",
@@ -127,7 +131,8 @@
   "prediction": "Prediction",
   "logout": "Logout",
   "navigation": "Navigation",
-  "management": "Management"
+  "management": "Management",
+  "country": "Country"
 }
 
 }
