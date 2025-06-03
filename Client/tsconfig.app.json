@@ -14,19 +14,16 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting - RÈGLES ASSOUPLIES POUR LA CI */
+    /* Linting - plus permissif temporairement */
     "strict": true,
-    "noUnusedLocals": false,        // ← Désactivé temporairement
-    "noUnusedParameters": false,    // ← Désactivé temporairement
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false,  // ← Plus permissif
-    "noUncheckedIndexedAccess": false,    // ← Plus permissif
 
     /* Types pour Vite */
-    "types": ["vite/client"]  // ← Ajouté pour import.meta.env
+    "types": ["vite/client"]
   },
   "include": [
-    "src",
-    "vite-env.d.ts"  // ← Ajouté si vous créez ce fichier
+    "src"
   ]
 }
