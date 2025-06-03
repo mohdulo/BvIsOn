@@ -5,30 +5,47 @@ yarn-debug.log
 yarn-error.log
 pnpm-debug.log
 
+# Fichiers de lock inutiles si tu utilises un seul gestionnaire
+# (décommente celui que tu n'utilises pas)
+# yarn.lock
+# pnpm-lock.yaml
+
 # Dossiers de build locaux
 dist/
 build/
 .cache/
 .next/
 out/
+*.tsbuildinfo
 
-# Fichiers de config de l'IDE
+# Fichiers de config d'IDE et d'éditeur
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 
-# Env vars
+# Fichiers d’environnement (attention si tu veux les copier)
 .env
 .env.*
+!.env.production
 
-# Test & coverage
+# Tests et rapports de couverture
 coverage/
-*.test.js
-*.test.ts
-*.spec.js
-*.spec.ts
+*.test.*
+*.spec.*
 jest.config.js
+vitest.config.js
+playwright-report/
+test-results/
 
-# Autres fichiers générés
+# Logs et fichiers générés
 *.log
 .DS_Store
 *.local
+*.swp
+*.tmp
+*.bak
+
+# OS-specific files
+Thumbs.db
+ehthumbs.db

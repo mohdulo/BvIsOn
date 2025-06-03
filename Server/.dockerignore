@@ -1,31 +1,32 @@
-# Fichiers Python compilés
+# Python caches
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
 
-# Fichiers de log
-*.log
-
-# Environnements virtuels
-.venv/
-env/
-venv/
-
-# Fichiers d'environnement sensibles
+# Environment files
 .env
 .env.*
+!.env.production
 
-# Cache de pip
-pip-wheel-metadata/
-*.whl
-
-# Dossiers inutiles dans l'image
-node_modules/
-tests/__pycache__/
-.idea/
-.vscode/
+# Byte-compiled / cache / logs / local db
 *.db
+*.sqlite3
+*.log
+instance/
 
-# Modèle d'entraînement local (si non utilisé en prod)
-*.pkl
-*.joblib
+# Coverage / test artifacts
+coverage/
+htmlcov/
+*.cover
+.pytest_cache/
+.test*
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.bak
