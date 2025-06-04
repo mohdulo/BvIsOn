@@ -50,7 +50,7 @@ jobs:
 
       - name: Unit tests
         working-directory: Client
-        run: npm test -- --ci --coverage
+        run: npm test -- --run --coverage
 
       - name: Build (Vite)
         working-directory: Client
