@@ -6,6 +6,7 @@ const api = axios.create({
     `${import.meta.env.VITE_API_URL_ROOT}/api/v1`,  // <-- on concatène ici
 });
 
+
 export interface CountrySummary {
   id: string;
   country: string;
@@ -14,6 +15,7 @@ export interface CountrySummary {
   deaths_total: number;
   deaths_new: number;
 }
+
 
 export const fetchCountriesSummary = async (): Promise<CountrySummary[]> => {
   const { data } = await api.get<CountrySummary[]>('/covid/countries/summary');

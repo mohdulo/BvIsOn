@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   X,
-  TrendingUp,
   User,
 } from "lucide-react";
 

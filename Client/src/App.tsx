@@ -14,7 +14,7 @@ import DataManagement from "./pages/DataManagement";
 import Login from "./pages/Login";
 import LanguageSelector from "./components/LanguageSelector"; // ← Assure-toi de l'importer si tu l'utilises
 
-import i18n from "./i18n/i18n"; // ← utile si besoin en dehors de useTranslation
+
 
 const AppContent: React.FC = () => {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
