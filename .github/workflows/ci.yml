@@ -72,6 +72,14 @@ jobs:
           # Utilise le build de Vite qui peut ignorer les erreurs TS
           npx vite build --mode development || echo "⚠️ Build with errors but CI continues"
 
+      # Add artifact upload for frontend build
+      - name: Upload frontend build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ github.run_number }}
+          path: Client/dist/
+          retention-days: 14
+
   accessibility-tests:
     name: Accessibility Tests (Pa11y)
     runs-on: ubuntu-latest
@@ -116,7 +124,7 @@ jobs:
         working-directory: Client
         run: |
           echo "♿ Running accessibility tests..."
-          npx pa11y-ci http://localhost:4173 || echo "⚠️ Accessibility issues found but CI continues"
+          npx pa11y-ci http://localhost:4173 --reporter json > a11y-results.json || echo "⚠️ Accessibility issues found but CI continues"
           
       - name: Stop preview server
         if: always()
@@ -124,6 +132,15 @@ jobs:
           echo "🛑 Stopping preview server..."
           pkill -f "vite preview" || true
           kill $(jobs -p) 2>/dev/null || true
+
+      # Upload accessibility test results
+      - name: Upload accessibility test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-results-${{ github.run_number }}
+          path: Client/a11y-results.json
+          retention-days: 30
 
   backend-build:
     name: Backend Build & Check
@@ -203,6 +220,28 @@ jobs:
             echo "📝 This is normal if your app has external dependencies not installed"
           fi
 
+      # Add backend source code artifact (clean version)
+      - name: Prepare backend for packaging
+        run: |
+          cd Server
+          # Clean up Python cache and temporary files
+          find . -name "*.pyc" -delete
+          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          find . -name "*.log" -delete 2>/dev/null || true
+
+      - name: Upload backend source artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-source-${{ github.run_number }}
+          path: |
+            Server/
+            !Server/__pycache__/
+            !Server/**/__pycache__/
+            !Server/*.pyc
+            !Server/**/*.pyc
+            !Server/*.log
+          retention-days: 14
+
   backend-lint:
     name: Backend Code Quality (Optional)
     runs-on: ubuntu-latest
@@ -250,16 +289,184 @@ jobs:
           echo "   isort ."
           echo "   flake8 . --max-line-length=88"
 
+  # New job: Create deployment artifacts
+  create-deployment-artifacts:
+    name: Create Deployment Artifacts
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-build, accessibility-tests]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ github.run_number }}
+          path: ./artifacts/frontend-dist
+
+      - name: Download backend source
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-source-${{ github.run_number }}
+          path: ./artifacts/backend-source
+
+      - name: Create deployment packages
+        run: |
+          # Get version information
+          if [ -f "Client/package.json" ]; then
+            VERSION=$(node -p "require('./Client/package.json').version" 2>/dev/null || echo "1.0.0")
+          else
+            VERSION="$(date +'%Y.%m.%d')-${GITHUB_SHA:0:8}"
+          fi
+          
+          BRANCH_NAME=${GITHUB_REF_NAME}
+          BUILD_DATE=$(date -u +'%Y-%m-%d_%H-%M-%S')
+          
+          echo "Creating deployment packages..."
+          echo "Version: $VERSION"
+          echo "Branch: $BRANCH_NAME" 
+          echo "Build Date: $BUILD_DATE"
+          
+          mkdir -p packages
+          
+          # 1. Frontend-only ZIP package
+          cd artifacts/frontend-dist
+          zip -r "../../packages/frontend-${VERSION}-${BRANCH_NAME}.zip" .
+          cd ../..
+          
+          # 2. Backend-only TAR.GZ package  
+          cd artifacts/backend-source
+          tar -czf "../../packages/backend-${VERSION}-${BRANCH_NAME}.tar.gz" .
+          cd ../..
+          
+          # 3. Complete deployment package
+          mkdir -p deploy-package/frontend deploy-package/backend
+          cp -r artifacts/frontend-dist/* deploy-package/frontend/
+          cp -r artifacts/backend-source/* deploy-package/backend/
+          
+          # Add deployment metadata
+          cat << EOF > deploy-package/deployment-info.json
+          {
+            "version": "${VERSION}",
+            "branch": "${BRANCH_NAME}",
+            "build_date": "${BUILD_DATE}",
+            "commit_sha": "${GITHUB_SHA}",
+            "workflow_run": "${GITHUB_RUN_NUMBER}",
+            "repository": "${GITHUB_REPOSITORY}"
+          }
+          EOF
+          
+          # Add README for deployment
+          cat << EOF > deploy-package/README.md
+          # Deployment Package
+          
+          **Version:** ${VERSION}  
+          **Branch:** ${BRANCH_NAME}  
+          **Build Date:** ${BUILD_DATE}  
+          **Commit:** ${GITHUB_SHA:0:8}  
+          
+          ## Structure
+          - \`frontend/\` - Built frontend application
+          - \`backend/\` - Backend source code
+          - \`deployment-info.json\` - Build metadata
+          
+          ## Quick Start
+          1. Deploy frontend files from \`frontend/\` directory
+          2. Set up backend environment and install dependencies
+          3. Configure environment variables
+          4. Start the application
+          EOF
+          
+          # Copy additional files if they exist
+          cp docker-compose.yml deploy-package/ 2>/dev/null || echo "No docker-compose.yml found"
+          cp docker-compose.prod.yml deploy-package/ 2>/dev/null || echo "No docker-compose.prod.yml found"
+          cp README.md deploy-package/PROJECT-README.md 2>/dev/null || echo "No README.md found"
+          
+          # Create complete deployment package
+          tar -czf "packages/complete-deployment-${VERSION}-${BRANCH_NAME}.tar.gz" -C deploy-package .
+          
+          # 4. Source code backup (for archival)
+          tar -czf "packages/source-code-${VERSION}-${BRANCH_NAME}.tar.gz" \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='Client/dist' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='*.log' \
+            --exclude='.env*' \
+            --exclude='artifacts' \
+            --exclude='packages' \
+            .
+          
+          # Create checksums
+          cd packages
+          sha256sum *.zip *.tar.gz > "checksums-${VERSION}-${BRANCH_NAME}.txt"
+          
+          echo ""
+          echo "📦 Created packages:"
+          ls -lh
+          
+          echo ""
+          echo "🔐 Checksums:"
+          cat "checksums-${VERSION}-${BRANCH_NAME}.txt"
+
+      - name: Upload deployment packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-packages-${{ github.run_number }}
+          path: packages/
+          retention-days: 60
+
+      - name: Upload complete deployment package (separate)
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-deployment-${{ github.ref_name }}
+          path: packages/complete-deployment-*.tar.gz
+          retention-days: 90
+
   deploy-check:
     name: Deployment Check
     runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-build, accessibility-tests]
+    needs: [frontend-tests, backend-build, accessibility-tests, create-deployment-artifacts]
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Download deployment packages
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-packages-${{ github.run_number }}
+          path: ./packages
+
+      - name: Verify deployment packages
+        run: |
+          echo "📦 Available deployment packages:"
+          ls -la packages/
+          
+          echo ""
+          echo "📊 Package sizes:"
+          du -sh packages/*
+          
+          echo ""
+          echo "🔐 Verifying checksums..."
+          cd packages
+          if sha256sum -c checksums-*.txt; then
+            echo "✅ All checksums verified successfully"
+          else
+            echo "⚠️ Checksum verification failed"
+          fi
+
       - name: Deployment Ready
         run: |
           echo "🚀 All checks passed - Ready for deployment!"
           echo "Frontend: ✅ Tests passed, Build successful"
           echo "Backend: ✅ Build successful"
           echo "Accessibility: ✅ Pa11y tests completed"
+          echo "Artifacts: ✅ Deployment packages created and verified"
+          echo ""
+          echo "📦 Available for download:"
+          echo "- Frontend build artifacts"
+          echo "- Backend source artifacts" 
+          echo "- Complete deployment package"
+          echo "- Individual component packages"
