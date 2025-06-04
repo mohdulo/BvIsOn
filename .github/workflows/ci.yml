@@ -3,7 +3,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop, youness-tmp]
+    branches: [main, develop, youness-tmp, fix/bug]
   pull_request:
     branches: [main, develop]
 
