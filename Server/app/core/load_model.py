@@ -1,16 +1,9 @@
+from __future__ import annotations
+
 import pickle
-import pathlib
+from pathlib import Path
 
-# ../models/pipeline.pkl
-MODEL_PATH = (
-    pathlib.Path(__file__)
-    .resolve()
-    .parent        
-    .parent 
-    / "models"
-    / "pipeline.pkl"
-)
+MODEL_PATH: Path = Path(__file__).resolve().parent.parent / "models" / "pipeline.pkl"
 
-with open(MODEL_PATH, "rb") as f:
-    model = pickle.load(f)
-
+with MODEL_PATH.open("rb") as fp:
+    model = pickle.load(fp)

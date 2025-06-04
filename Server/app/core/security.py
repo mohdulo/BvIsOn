@@ -1,3 +1,5 @@
+"""Security utilities – password hashing, JWT handling, password‑strength check."""
+
 from __future__ import annotations
 
 import os
@@ -12,7 +14,6 @@ from passlib.context import CryptContext
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-
 JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", secrets.token_urlsafe(32))
 if JWT_SECRET_KEY == secrets.token_urlsafe(32):
     # Warn when a default secret is being used in a non‑dev environment.
@@ -41,6 +42,7 @@ def get_password_hash(password: str) -> str:
 
     return pwd_context.hash(password)
 
+
 # ---------------------------------------------------------------------------
 # JWT helpers
 # ---------------------------------------------------------------------------
@@ -52,7 +54,9 @@ def create_access_token(
 
     to_encode = data.copy()
     expire = datetime.utcnow() + (
-        expires_delta if expires_delta else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta
+        if expires_delta
+        else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
     to_encode.update(
@@ -83,6 +87,7 @@ def verify_token(token: str) -> dict:
         )
 
     return payload
+
 
 # ---------------------------------------------------------------------------
 # Password‑strength checker
