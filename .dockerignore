@@ -1,0 +1,42 @@
+# ──────────── Racine / VCS ────────────
+.git/
+.gitignore
+.dockerignore
+
+# Exclure d’autres Dockerfile éventuels pour éviter la confusion
+Dockerfile.dev
+Dockerfile.*
+
+# ──────────── Node / Front ────────────
+Client/node_modules/
+**/node_modules/
+Client/dist/
+**/dist/
+
+# Bundles & locks
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# ──────────── Python / Back ────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pytest_cache/
+Server/.venv/
+
+# ──────────── Environnements & secrets ────────────
+.env
+.env.*
+
+# ──────────── IDE / tooling ────────────
+.vscode/
+.idea/
+*.log
+
+# ──────────── Tests & couverture ────────────
+coverage/
+coverage.xml
+**/*.spec.*
+**/*.test.*
