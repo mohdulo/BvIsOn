@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bvision
+    env: docker
+    plan: free
+    repo: https://github.com/ton-utilisateur/BvIsOn
+    branch: main
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        value: mysql+pymysql://root:root@YOUR_DB_URL/BvIsiOn
