@@ -25,8 +25,8 @@ out/
 *.sublime-workspace
 
 # Fichiers d’environnement (attention si tu veux les copier)
-.env
-.env.*
+# .env
+# .env.*
 !.env.production
 
 # Tests et rapports de couverture

@@ -11,6 +11,8 @@ COPY package*.json ./
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN npm ci --unsafe-perm
 
+COPY .env .env
+
 # Copie le reste des fichiers
 COPY . .
 

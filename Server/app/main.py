@@ -26,7 +26,7 @@ app = FastAPI(
 # Middleware de sécurité - Hosts autorisés
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "*.votre-domaine.com"]
+    allowed_hosts=["localhost", "0.0.0.0", "*.votre-domaine.com"]
 )
 
 # CORS sécurisé
@@ -34,7 +34,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # Development
-        "http://localhost:3000",  # Alternative dev port
+        "http://frontend:3000",  # Alternative dev port
         "https://votre-domaine.com"  # Production
     ],
     allow_credentials=True,

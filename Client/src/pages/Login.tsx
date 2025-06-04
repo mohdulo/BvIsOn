@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, AlertCircle, Shield } from 'lucide-react';
-
+console.log("🔍 API ROOT = ", import.meta.env.VITE_API_URL_ROOT);
 const Login: React.FC = () => {
   const [credentials, setCredentials] = useState({
     username: '',

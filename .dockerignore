@@ -27,8 +27,8 @@ __pycache__/
 Server/.venv/
 
 # ──────────── Environnements & secrets ────────────
-.env
-.env.*
+# .env
+# .env.*
 
 # ──────────── IDE / tooling ────────────
 .vscode/
