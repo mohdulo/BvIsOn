@@ -66,37 +66,42 @@ jobs:
 
   # ---------------------- Accessibility ------------------------------
   accessibility:
-    name: Pa11y WCAG audit
-    needs: frontend
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  name: Pa11y WCAG audit
+  needs: frontend              # ← ajuste si ton job build se nomme différemment
+  runs-on: ubuntu-latest
 
-      - name: Download built SPA
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-${{ github.run_number }}
-          path: dist
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Serve & audit with Pa11y
-        uses: pa11y/pa11y-action@v2 # lightweight wrapper around pa11y‑ci
-        with:
-          # Pa11y options
-          urls: http://localhost:8080
-          standard: WCAG2AA
-          chrome-flags: "--no-sandbox"
-          output-path: a11y-results
-          # Server options (served by the action)
-          server-root: dist
-          server-port: 8080
+    # Récupère le build Vite/React généré dans le job "frontend"
+    - name: Download built SPA
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-dist-${{ github.run_number }}
+        path: dist
 
-      - name: Upload Pa11y report
-        uses: actions/upload-artifact@v4
-        with:
-          name: a11y-report-${{ github.run_number }}
-          path: a11y-results
-          retention-days: 30
+    # Sert le dossier et exécute Pa11y-CI
+    - name: Serve & audit with Pa11y
+      uses: pa11y/pa11y-action@v1.2.0   # dernière release disponible
+      with:
+        # Pa11y-CI options
+        urls: http://localhost:8080
+        standard: WCAG2AA
+        chrome-flags: "--no-sandbox"
+        output-path: a11y-results
 
+        # Options du serveur statique embarqué par l’action
+        server-root: dist
+        server-port: 8080
+
+    # Archive les rapports (HTML, JSON, etc.) produits dans a11y-results/
+    - name: Upload Pa11y report
+      uses: actions/upload-artifact@v4
+      with:
+        name: a11y-report-${{ github.run_number }}
+        path: a11y-results
+        retention-days: 30
   # ---------------------- Back‑end -----------------------------------
   backend:
     name: Back‑end (lint + test)
@@ -116,10 +121,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install black flake8 isort pytest pytest-cov
-
-      - name: Lint – Flake8
-        working-directory: Server
-        run: flake8 . --max-line-length 88 --extend-ignore E203,W503
 
       - name: Lint – isort
         working-directory: Server

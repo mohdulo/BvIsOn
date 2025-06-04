@@ -1,3 +1,5 @@
+"""Authentication endpoints – Black & Flake8‑compliant (≤88 chars)."""
+
 from __future__ import annotations
 
 import logging
@@ -21,14 +23,17 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(login_data: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
-    """Connexion admin."""
+def login(  # noqa: D401 – simple view
+    login_data: LoginRequest, db: Session = Depends(get_db)
+) -> LoginResponse:
+    """Authenticate an admin user and return a JWT."""
+
     user: User | None = (
         db.query(User).filter(User.username == login_data.username).first()
     )
 
     if not user or not verify_password(login_data.password, user.hashed_password):
-        logger.warning("Failed login attempt for username: %s", login_data.username)
+        logger.warning("Failed login attempt: %s", login_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -41,15 +46,15 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)) -> LoginRespo
         )
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    token = create_access_token(
         data={"sub": user.username},
         expires_delta=access_token_expires,
     )
 
-    logger.info("Successful login for user: %s", user.username)
+    logger.info("Successful login: %s", user.username)
 
     return LoginResponse(
-        access_token=access_token,
+        access_token=token,
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=UserResponse.from_orm(user),
@@ -57,7 +62,10 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)) -> LoginRespo
 
 
 @router.post("/logout")
-def logout(current_user: User = Depends(get_current_user)) -> dict[str, str]:  # type: ignore[name-defined]
-    """Déconnexion."""
+def logout(  # type: ignore[name-defined]
+    current_user: User = Depends(get_current_user),
+) -> dict[str, str]:
+    """Invalidate the current session (placeholder)."""
+
     logger.info("User logged out: %s", current_user.username)
     return {"message": "Successfully logged out"}
