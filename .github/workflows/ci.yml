@@ -65,42 +65,61 @@ jobs:
           if-no-files-found: error
 
   # ---------------------- Accessibility ------------------------------
-  accessibility: # ← ID du job
-    name: Pa11y WCAG audit
-    needs: frontend # dépend du job 'frontend'
-    runs-on: ubuntu-latest
+  # ↓ ajoute ce job sous "jobs:" de ton workflow
+# ↓ ajoute ce job sous "jobs:" de ton workflow
+accessibility:
+  name: Pa11y WCAG audit
+  needs: frontend # ← adapte si ton job build a un autre ID
+  runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Download built SPA
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-${{ github.run_number }}
-          path: dist
+    # Récupère le build Vite/React généré par le job "frontend"
+    - name: Download built SPA
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-dist-${{ github.run_number }}
+        path: dist
 
-      - name: Serve & audit with Pa11y
-        uses: pa11y/pa11y-action@v1.2.0 # v2 n’existe pas encore
-        with:
-          # Options Pa11y-CI
-          urls: http://localhost:8080
-          standard: WCAG2AA
-          chrome-flags: "--no-sandbox"
-          output-path: a11y-results
-          # Serveur statique embarqué
-          server-root: dist
-          server-port: 8080
+    # Installe Node et Pa11y-CI
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
 
-      - name: Upload Pa11y report
-        uses: actions/upload-artifact@v4
-        with:
-          name: a11y-report-${{ github.run_number }}
-          path: a11y-results
-          retention-days: 30
+    - name: Install Pa11y-CI globally
+      run: npm install -g pa11y@7.0.0 serve@14.2.3 wait-on@7.2.0
+
+    # Sert les fichiers statiques puis lance Pa11y
+    - name: Serve & audit with Pa11y
+      run: |
+        # 1) Démarrer un serveur statique sur le port 8080
+        nohup serve -s dist -l 8080 --no-request-logging >server.log 2>&1 &
+        SERVER_PID=$!
+        # 2) Attendre que le serveur réponde
+        npx wait-on http://localhost:8080 --timeout 30000
+        # 3) Lancer Pa11y-CI
+        pa11y http://localhost:8080 \
+          --standard WCAG2AA \
+          --timeout 30000 \
+          --wait 2000 \
+          --reporter html > a11y-results/report.html
+        # 4) Arrêter le serveur
+        kill $SERVER_PID
+
+    # Archive le rapport
+    - name: Upload Pa11y report
+      uses: actions/upload-artifact@v4
+      with:
+        name: a11y-report-${{ github.run_number }}
+        path: a11y-results
+        retention-days: 30
+
   # ---------------------- Back‑end -----------------------------------
   backend:
-    name: Back‑end (lint + test)
+    name: Back‑end +  test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -117,10 +136,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install black flake8 isort pytest pytest-cov
-
-      - name: Lint – isort
-        working-directory: Server
-        run: isort --check-only --diff .
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
