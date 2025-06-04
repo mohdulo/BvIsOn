@@ -1,11 +1,4 @@
-# Continuous-Integration pipeline – refined version
-# -------------------------------------------------
-# * Hardened: test & lint failures stop the build.
-# * Faster: automatic caching via setup-node/setup-python.
-# * Clean: duplicated steps removed, concurrency/cancellation added.
-# * Portable: everything runs on ubuntu-latest only, but adding
-#   further OSes / Node versions is one line thanks to matrix.
-#
+
 # Drop this file in .github/workflows/ci.yml
 
 name: CI
