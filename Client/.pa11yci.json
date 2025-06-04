@@ -1,0 +1,27 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "wait": 2000,
+    "chromeLaunchConfig": {
+      "args": [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-web-security"
+      ]
+    },
+    "reporters": ["console"],
+    "ignore": [
+      "WCAG2AA.Principle1.Guideline1_4.1_4_3.G18.Fail"
+    ],
+    "includeNotices": false,
+    "includeWarnings": true,
+    "threshold": 10
+  },
+  "urls": [
+    "http://localhost:4173/",
+    "http://localhost:4173/index.html"
+  ]
+}

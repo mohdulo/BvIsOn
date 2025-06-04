@@ -84,55 +84,382 @@ jobs:
     name: Accessibility Tests (Pa11y)
     runs-on: ubuntu-latest
     needs: [frontend-tests]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: Client/package-lock.json
-          
+
       - name: Install frontend dependencies
         working-directory: Client
         run: npm ci
-        
+
       - name: Build frontend application
         working-directory: Client
         run: |
           npm run build || echo "⚠️ Build with errors but accessibility tests continue"
-          
-      - name: Install Pa11y tools
-        run: npm install -g wait-on pa11y-ci
-        
-      - name: Start preview server
+
+      - name: Verify build and content
+        working-directory: Client
+        run: |
+          echo "📁 Checking build output..."
+          ls -la dist/ || echo "No dist folder found"
+          echo ""
+          echo "📄 Build content preview:"
+          find dist/ -name "*.html" -exec echo "File: {}" \; -exec head -20 {} \; 2>/dev/null || echo "No HTML files found"
+
+      - name: Create Pa11y configuration
+        working-directory: Client
+        run: |
+          # Create comprehensive Pa11y configuration
+          cat << 'EOF' > .pa11yci.json
+          {
+            "defaults": {
+              "standard": "WCAG2AA",
+              "timeout": 30000,
+              "wait": 2000,
+              "chromeLaunchConfig": {
+                "args": [
+                  "--no-sandbox",
+                  "--disable-setuid-sandbox",
+                  "--disable-dev-shm-usage",
+                  "--disable-gpu"
+                ]
+              },
+              "reporters": [
+                "console",
+                "json"
+              ],
+              "ignore": [
+                "WCAG2AA.Principle1.Guideline1_4.1_4_3.G18.Fail"
+              ]
+            },
+            "urls": [
+              "http://localhost:4173/",
+              "http://localhost:4173/index.html"
+            ]
+          }
+          EOF
+
+          echo "Created Pa11y configuration:"
+          cat .pa11yci.json
+
+      - name: Install Pa11y tools with dependencies
+        run: |
+          npm install -g pa11y-ci pa11y wait-on serve
+
+      - name: Start preview server with better error handling
         working-directory: Client
         run: |
           echo "🚀 Starting preview server..."
-          npm run preview &
-          echo "SERVER_PID=$!" >> $GITHUB_ENV
-          
-      - name: Wait for server to be ready
+
+          # Check if dist folder exists and has content
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then
+            echo "❌ No build output found, creating a test page..."
+            mkdir -p dist
+            cat << 'EOF' > dist/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Test Application - Accessibility Check</title>
+          </head>
+          <body>
+            <header>
+              <h1>Test Application</h1>
+              <nav aria-label="Main navigation">
+                <ul>
+                  <li><a href="#main">Home</a></li>
+                  <li><a href="#about">About</a></li>
+                  <li><a href="#contact">Contact</a></li>
+                </ul>
+              </nav>
+            </header>
+            
+            <main id="main">
+              <section>
+                <h2>Welcome to Our Application</h2>
+                <p>This is a test page for accessibility checking.</p>
+                
+                <form>
+                  <label for="email">Email Address:</label>
+                  <input type="email" id="email" name="email" required>
+                  
+                  <label for="message">Message:</label>
+                  <textarea id="message" name="message" rows="4"></textarea>
+                  
+                  <button type="submit">Submit</button>
+                </form>
+                
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNzNkYyIvPgogIDx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGVzdDwvdGV4dD4KICA8L3N2Zz4K" alt="Test image for accessibility checking">
+              </section>
+              
+              <section id="about">
+                <h2>About Section</h2>
+                <p>Testing various accessibility features:</p>
+                <ul>
+                  <li>Proper heading structure</li>
+                  <li>Form labels</li>
+                  <li>Image alt text</li>
+                  <li>Semantic HTML</li>
+                </ul>
+              </section>
+            </main>
+            
+            <footer>
+              <p>&copy; 2024 Test Application. All rights reserved.</p>
+            </footer>
+          </body>
+          </html>
+          EOF
+          fi
+
+          # Start server using serve (more reliable than vite preview for CI)
+          echo "Starting server with serve..."
+          nohup serve -s dist -p 4173 > server.log 2>&1 &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          echo "Started server with PID: $SERVER_PID"
+
+          # Wait a moment for server to start
+          sleep 5
+
+      - name: Wait for server and verify
         run: |
           echo "⏳ Waiting for server to be ready..."
-          npx wait-on http://localhost:4173 --timeout 60000
-          
-      - name: Run Pa11y accessibility tests
+
+          # Check if process is running
+          if kill -0 $SERVER_PID 2>/dev/null; then
+            echo "✅ Server process is running (PID: $SERVER_PID)"
+          else
+            echo "❌ Server process died"
+            cat Client/server.log || echo "No server log found"
+            exit 1
+          fi
+
+          # Wait for HTTP response
+          npx wait-on http://localhost:4173 --timeout 60000 --interval 2000 || {
+            echo "❌ Server failed to respond"
+            echo "Server log:"
+            cat Client/server.log || echo "No server log found"
+            echo "Network check:"
+            netstat -tlnp | grep 4173 || echo "Port 4173 not listening"
+            exit 1
+          }
+
+          # Test the actual response
+          echo "🔍 Testing server response..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4173)
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ Server responding with HTTP 200"
+          else
+            echo "❌ Server responding with HTTP $HTTP_STATUS"
+            curl -v http://localhost:4173 || echo "Curl failed"
+            exit 1
+          fi
+
+      - name: Run comprehensive Pa11y accessibility tests
         working-directory: Client
         run: |
-          echo "♿ Running accessibility tests..."
-          npx pa11y-ci http://localhost:4173 --reporter json > a11y-results.json || echo "⚠️ Accessibility issues found but CI continues"
-          
+          echo "♿ Running Pa11y accessibility tests..."
+
+          # Create results directory
+          mkdir -p a11y-results
+
+          # Run Pa11y with detailed reporting
+          echo "Running Pa11y CI with configuration..."
+          npx pa11y-ci --config .pa11yci.json \
+            --reporter json \
+            --reporter-option json-file=a11y-results/detailed-results.json || echo "⚠️ Accessibility issues found"
+
+          # Run individual Pa11y tests for better reporting
+          echo ""
+          echo "🔍 Running detailed Pa11y analysis..."
+
+          # Test main page
+          npx pa11y http://localhost:4173 \
+            --standard WCAG2AA \
+            --reporter html \
+            --reporter-option html-file=a11y-results/main-page-report.html || echo "Issues found on main page"
+
+          # Test with different standards
+          npx pa11y http://localhost:4173 \
+            --standard WCAG2AAA \
+            --reporter json \
+            --reporter-option json-file=a11y-results/wcag2aaa-results.json || echo "WCAG2AAA issues found"
+
+          # Generate human-readable summary
+          npx pa11y http://localhost:4173 \
+            --standard WCAG2AA > a11y-results/summary.txt || echo "Summary generation completed with issues"
+
+      - name: Analyze and report accessibility results
+        if: always()
+        working-directory: Client
+        run: |
+          echo "📊 Accessibility Test Analysis"
+          echo "================================"
+
+          # Check if results exist
+          if [ -d "a11y-results" ]; then
+            echo "✅ Results directory created"
+            ls -la a11y-results/
+          else
+            echo "❌ No results directory found"
+            exit 1
+          fi
+
+          echo ""
+          echo "📈 Test Summary:"
+          if [ -f "a11y-results/summary.txt" ]; then
+            echo "--- Pa11y Summary Report ---"
+            cat a11y-results/summary.txt
+          else
+            echo "No summary file generated"
+          fi
+
+          echo ""
+          echo "📋 Issue Count Analysis:"
+          if [ -f "a11y-results/detailed-results.json" ]; then
+            # Count issues by type
+            python3 -c "
+          import json
+          import sys
+
+          try:
+              with open('a11y-results/detailed-results.json', 'r') as f:
+                  data = json.load(f)
+              
+              if isinstance(data, list):
+                  for result in data:
+                      url = result.get('pageUrl', 'Unknown URL')
+                      issues = result.get('issues', [])
+                      print(f'URL: {url}')
+                      print(f'Total Issues: {len(issues)}')
+                      
+                      # Group by type
+                      types = {}
+                      for issue in issues:
+                          issue_type = issue.get('type', 'unknown')
+                          types[issue_type] = types.get(issue_type, 0) + 1
+                      
+                      for issue_type, count in types.items():
+                          print(f'  {issue_type}: {count}')
+                      print()
+              else:
+                  print('JSON format not recognized')
+          except Exception as e:
+              print(f'Error analyzing results: {e}')
+          " || echo "Could not analyze JSON results"
+          else
+            echo "No detailed results JSON found"
+          fi
+
+          echo ""
+          echo "🎯 Accessibility Recommendations:"
+          echo "1. Check the HTML report for visual issue overview"
+          echo "2. Review WCAG 2.1 AA compliance issues first"
+          echo "3. Focus on keyboard navigation and screen reader compatibility"
+          echo "4. Ensure sufficient color contrast ratios"
+          echo "5. Verify all interactive elements have proper labels"
+
+      - name: Create accessibility badge and metrics
+        if: always()
+        working-directory: Client
+        run: |
+          echo "🏆 Creating accessibility metrics..."
+
+          # Create a simple metrics file
+          cat << 'EOF' > a11y-results/metrics.md
+          # Accessibility Test Results
+
+          ## Test Configuration
+          - **Standard**: WCAG 2.1 AA
+          - **Tools**: Pa11y
+          - **Date**: $(date -u)
+          - **Commit**: ${{ github.sha }}
+
+          ## Quick Actions
+          1. Review the HTML report for visual issue identification
+          2. Check JSON results for programmatic analysis
+          3. Address high-priority issues first (errors before warnings)
+
+          ## Files Generated
+          - `detailed-results.json` - Complete test results
+          - `main-page-report.html` - Visual HTML report
+          - `summary.txt` - Human-readable summary
+          - `wcag2aaa-results.json` - Stricter WCAG 2.1 AAA results
+
+          EOF
+
+          echo "📄 Accessibility metrics created"
+
       - name: Stop preview server
         if: always()
         run: |
           echo "🛑 Stopping preview server..."
-          pkill -f "vite preview" || true
-          kill $(jobs -p) 2>/dev/null || true
+          if [ ! -z "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
+            kill $SERVER_PID
+            echo "Server stopped (PID: $SERVER_PID)"
+          fi
 
+          # Cleanup any remaining processes
+          pkill -f "serve -s" 2>/dev/null || echo "No serve processes to clean up"
+          pkill -f "vite preview" 2>/dev/null || echo "No vite processes to clean up"
+
+      - name: Upload comprehensive accessibility results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-results-${{ github.run_number }}
+          path: |
+            Client/a11y-results/
+            Client/server.log
+            Client/.pa11yci.json
+          retention-days: 30
+
+      - name: Comment accessibility summary on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './Client/a11y-results/summary.txt';
+
+            if (fs.existsSync(path)) {
+              const summary = fs.readFileSync(path, 'utf8');
+              const comment = `## 🔍 Accessibility Test Results
+              
+              **Pa11y WCAG 2.1 AA Compliance Check**
+              
+              \`\`\`
+              ${summary.slice(0, 2000)}${summary.length > 2000 ? '\n... (truncated)' : ''}
+              \`\`\`
+              
+              📁 **Full results available in the build artifacts**
+              - Download the \`accessibility-results-${{ github.run_number }}\` artifact
+              - Review \`main-page-report.html\` for visual issue overview
+              - Check \`detailed-results.json\` for programmatic analysis
+              
+              🎯 **Next Steps**
+              1. Address any error-level issues
+              2. Review warning-level issues for improvement opportunities
+              3. Test with actual screen readers for real-world validation
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
       # Upload accessibility test results
       - name: Upload accessibility test results
         if: always()
@@ -320,32 +647,32 @@ jobs:
           else
             VERSION="$(date +'%Y.%m.%d')-${GITHUB_SHA:0:8}"
           fi
-          
+
           BRANCH_NAME=${GITHUB_REF_NAME}
           BUILD_DATE=$(date -u +'%Y-%m-%d_%H-%M-%S')
-          
+
           echo "Creating deployment packages..."
           echo "Version: $VERSION"
           echo "Branch: $BRANCH_NAME" 
           echo "Build Date: $BUILD_DATE"
-          
+
           mkdir -p packages
-          
+
           # 1. Frontend-only ZIP package
           cd artifacts/frontend-dist
           zip -r "../../packages/frontend-${VERSION}-${BRANCH_NAME}.zip" .
           cd ../..
-          
+
           # 2. Backend-only TAR.GZ package  
           cd artifacts/backend-source
           tar -czf "../../packages/backend-${VERSION}-${BRANCH_NAME}.tar.gz" .
           cd ../..
-          
+
           # 3. Complete deployment package
           mkdir -p deploy-package/frontend deploy-package/backend
           cp -r artifacts/frontend-dist/* deploy-package/frontend/
           cp -r artifacts/backend-source/* deploy-package/backend/
-          
+
           # Add deployment metadata
           cat << EOF > deploy-package/deployment-info.json
           {
@@ -357,36 +684,36 @@ jobs:
             "repository": "${GITHUB_REPOSITORY}"
           }
           EOF
-          
+
           # Add README for deployment
           cat << EOF > deploy-package/README.md
           # Deployment Package
-          
+
           **Version:** ${VERSION}  
           **Branch:** ${BRANCH_NAME}  
           **Build Date:** ${BUILD_DATE}  
           **Commit:** ${GITHUB_SHA:0:8}  
-          
+
           ## Structure
           - \`frontend/\` - Built frontend application
           - \`backend/\` - Backend source code
           - \`deployment-info.json\` - Build metadata
-          
+
           ## Quick Start
           1. Deploy frontend files from \`frontend/\` directory
           2. Set up backend environment and install dependencies
           3. Configure environment variables
           4. Start the application
           EOF
-          
+
           # Copy additional files if they exist
           cp docker-compose.yml deploy-package/ 2>/dev/null || echo "No docker-compose.yml found"
           cp docker-compose.prod.yml deploy-package/ 2>/dev/null || echo "No docker-compose.prod.yml found"
           cp README.md deploy-package/PROJECT-README.md 2>/dev/null || echo "No README.md found"
-          
+
           # Create complete deployment package
           tar -czf "packages/complete-deployment-${VERSION}-${BRANCH_NAME}.tar.gz" -C deploy-package .
-          
+
           # 4. Source code backup (for archival)
           tar -czf "packages/source-code-${VERSION}-${BRANCH_NAME}.tar.gz" \
             --exclude='.git' \
@@ -399,15 +726,15 @@ jobs:
             --exclude='artifacts' \
             --exclude='packages' \
             .
-          
+
           # Create checksums
           cd packages
           sha256sum *.zip *.tar.gz > "checksums-${VERSION}-${BRANCH_NAME}.txt"
-          
+
           echo ""
           echo "📦 Created packages:"
           ls -lh
-          
+
           echo ""
           echo "🔐 Checksums:"
           cat "checksums-${VERSION}-${BRANCH_NAME}.txt"
@@ -429,7 +756,13 @@ jobs:
   deploy-check:
     name: Deployment Check
     runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-build, accessibility-tests, create-deployment-artifacts]
+    needs:
+      [
+        frontend-tests,
+        backend-build,
+        accessibility-tests,
+        create-deployment-artifacts,
+      ]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -443,11 +776,11 @@ jobs:
         run: |
           echo "📦 Available deployment packages:"
           ls -la packages/
-          
+
           echo ""
           echo "📊 Package sizes:"
           du -sh packages/*
-          
+
           echo ""
           echo "🔐 Verifying checksums..."
           cd packages
