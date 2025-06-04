@@ -98,8 +98,11 @@ async function handleSubmit(e: React.FormEvent) {
     console.log("✅ Prediction completed:", res.pred_new_deaths);
   } catch (err: any) {
     console.error("❌ Prediction failed:", err);
-    setError(err.message || t("error.prediction"));
 
+    // Utilise toujours la traduction
+    setError(t("error.prediction"));
+
+    // Redirige si besoin
     if (err.message?.includes("Accès refusé")) {
       setTimeout(() => {
         window.location.href = "/login";
@@ -109,6 +112,7 @@ async function handleSubmit(e: React.FormEvent) {
     setLoading(false);
   }
 }
+
 
 
   const confirmed = form.Confirmed;
