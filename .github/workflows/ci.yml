@@ -105,33 +105,102 @@ jobs:
         run: |
           npm run build || echo "⚠️ Build with errors but accessibility tests continue"
           
+      - name: Verify build output
+        working-directory: Client
+        run: |
+          echo "📁 Checking build output..."
+          ls -la dist/ || echo "No dist folder found"
+          
       - name: Install Pa11y tools
         run: npm install -g wait-on pa11y-ci
         
-      - name: Start preview server
+      - name: Start preview server in background
         working-directory: Client
         run: |
           echo "🚀 Starting preview server..."
-          npm run preview &
-          echo "SERVER_PID=$!" >> $GITHUB_ENV
+          # Start server in background with nohup to ensure it stays running
+          nohup npm run preview > preview.log 2>&1 &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          echo "Started server with PID: $SERVER_PID"
+          sleep 3
           
-      - name: Wait for server to be ready
+      - name: Check server status and wait
         run: |
           echo "⏳ Waiting for server to be ready..."
-          npx wait-on http://localhost:4173 --timeout 60000
+          echo "Server PID: $SERVER_PID"
+          
+          # Check if process is still running
+          if kill -0 $SERVER_PID 2>/dev/null; then
+            echo "✅ Server process is running"
+          else
+            echo "❌ Server process not found"
+            echo "Preview log content:"
+            cat Client/preview.log || echo "No log file found"
+            exit 1
+          fi
+          
+          # Wait for server with more verbose output and longer timeout
+          npx wait-on http://localhost:4173 \
+            --timeout 120000 \
+            --interval 2000 \
+            --verbose || {
+            echo "❌ Server failed to start within timeout"
+            echo "Server log:"
+            cat Client/preview.log || echo "No log file found"
+            echo "Network status:"
+            netstat -tlnp | grep 4173 || echo "Port 4173 not in use"
+            exit 1
+          }
+          
+      - name: Verify server is responding
+        run: |
+          echo "🔍 Testing server response..."
+          curl -f http://localhost:4173 || {
+            echo "❌ Server not responding to HTTP requests"
+            echo "Server log:"
+            cat Client/preview.log || echo "No log file found"
+            exit 1
+          }
+          echo "✅ Server is responding"
           
       - name: Run Pa11y accessibility tests
         working-directory: Client
         run: |
           echo "♿ Running accessibility tests..."
-          npx pa11y-ci http://localhost:4173 --reporter json > a11y-results.json || echo "⚠️ Accessibility issues found but CI continues"
+          npx pa11y-ci http://localhost:4173 \
+            --reporter json \
+            --reporter-option json-file=a11y-results.json \
+            --threshold 10 || echo "⚠️ Accessibility issues found but CI continues"
+          
+          # Also create a human-readable report
+          npx pa11y http://localhost:4173 > a11y-summary.txt || echo "Summary generation failed"
+          
+      - name: Show accessibility results
+        if: always()
+        working-directory: Client
+        run: |
+          echo "📊 Accessibility Test Results:"
+          if [ -f "a11y-results.json" ]; then
+            echo "JSON results file created"
+            wc -l a11y-results.json
+          fi
+          if [ -f "a11y-summary.txt" ]; then
+            echo "Summary:"
+            cat a11y-summary.txt
+          fi
           
       - name: Stop preview server
         if: always()
         run: |
           echo "🛑 Stopping preview server..."
-          pkill -f "vite preview" || true
-          kill $(jobs -p) 2>/dev/null || true
+          if [ ! -z "$SERVER_PID" ]; then
+            kill $SERVER_PID 2>/dev/null || echo "Process already stopped"
+            wait $SERVER_PID 2>/dev/null || echo "Process cleanup complete"
+          fi
+          # Fallback cleanup
+          pkill -f "vite preview" 2>/dev/null || echo "No vite preview processes found"
+          pkill -f "npm run preview" 2>/dev/null || echo "No npm preview processes found"
 
       # Upload accessibility test results
       - name: Upload accessibility test results
@@ -139,7 +208,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: accessibility-results-${{ github.run_number }}
-          path: Client/a11y-results.json
+          path: |
+            Client/a11y-results.json
+            Client/a11y-summary.txt
+            Client/preview.log
           retention-days: 30
 
   backend-build:
