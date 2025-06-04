@@ -27,11 +27,12 @@ services:
     image: mysql:8.0
     container_name: mysql
     ports:
-      - "3306:3306"
+      - "3307:3306" 
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: BvIsiOn
-      MYSQL_PASSWORD: root
+      - MYSQL_ROOT_PASSWORD=kali
+      - MYSQL_DATABASE=Data
+      - MYSQL_USER=mouha
+      - MYSQL_PASSWORD=kali
     volumes:
       - mysql_data:/var/lib/mysql
 
