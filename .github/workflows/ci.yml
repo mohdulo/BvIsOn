@@ -5,7 +5,7 @@ on:
   push:
     branches: [main, develop, youness-tmp]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, youness-tmp]
 
 jobs:
   debug-structure:
