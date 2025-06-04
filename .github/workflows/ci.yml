@@ -191,38 +191,6 @@ jobs:
           # Install Pa11y with specific version
           npm install -g pa11y@7.0.0
 
-      - name: Create Pa11y configuration
-        working-directory: Client
-        run: |
-          # Create Pa11y config file to handle Chrome properly
-          cat > .pa11yrc << 'EOF'
-          {
-            "chromeLaunchConfig": {
-              "executablePath": "/usr/bin/google-chrome-stable",
-              "args": [
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--disable-extensions",
-                "--disable-background-timer-throttling",
-                "--disable-backgrounding-occluded-windows",
-                "--disable-renderer-backgrounding",
-                "--no-first-run",
-                "--no-default-browser-check",
-                "--disable-web-security",
-                "--disable-features=VizDisplayCompositor"
-              ],
-              "headless": "new"
-            },
-            "timeout": 30000,
-            "wait": 2000
-          }
-          EOF
-
-          echo "Pa11y configuration created:"
-          cat .pa11yrc
-
       - name: Setup Chrome
         run: |
           # Update package list
@@ -269,24 +237,28 @@ jobs:
           # Set environment variables for Chrome
           export DISPLAY=:99
           export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+          export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
           echo "Testing WCAG 2.1 AA compliance..."
           npx pa11y http://localhost:4173 \
-            --config .pa11yrc \
             --standard WCAG2AA \
+            --timeout 30000 \
+            --wait 2000 \
             > a11y-results/wcag2aa-results.txt 2>&1 || echo "WCAG2AA test completed with issues"
 
           echo "Testing WCAG 2.1 AAA compliance (strict)..."
           npx pa11y http://localhost:4173 \
-            --config .pa11yrc \
             --standard WCAG2AAA \
+            --timeout 30000 \
+            --wait 2000 \
             > a11y-results/wcag2aaa-results.txt 2>&1 || echo "WCAG2AAA test completed with issues"
 
           echo "Generating JSON results..."
           npx pa11y http://localhost:4173 \
-            --config .pa11yrc \
             --standard WCAG2AA \
             --reporter json \
+            --timeout 30000 \
+            --wait 2000 \
             > a11y-results/results.json 2>&1 || echo "JSON results generated"
 
       - name: Analyze accessibility results
