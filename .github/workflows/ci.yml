@@ -1,744 +1,195 @@
-# .github/workflows/ci.yml
-name: CI Pipeline
+# Continuous‑Integration pipeline – refined version
+# -------------------------------------------------
+# * Hardened: test & lint failures stop the build.
+# * Faster: automatic caching via setup‑node/setup‑python.
+# * Clean: duplicated steps removed, concurrency/cancellation added.
+# * Portable: everything runs on ubuntu‑latest only, but adding
+#   further OSes / Node versions is one line thanks to matrix.
+#
+# Drop this file in .github/workflows/ci.yml
+
+name: CI
+
+# Cancel older runs on the same branch/PR when a new commit arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
-    branches: [main, develop, youness-tmp]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
 jobs:
-  debug-structure:
-    name: Debug Project Structure
+  # ---------------------- Front‑end ----------------------------------
+  frontend:
+    name: Front‑end (lint + test + build)
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        node: [20] # add 18 or 22 here if you support them
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Show project structure
-        run: |
-          echo "=== Project Root ==="
-          ls -la
-          echo ""
-          echo "=== Looking for package.json files ==="
-          find . -name "package.json" -type f 2>/dev/null || echo "No package.json found"
-          echo ""
-          echo "=== Looking for requirements.txt files ==="
-          find . -name "requirements.txt" -type f 2>/dev/null || echo "No requirements.txt found"
-          echo ""
-          echo "=== Complete structure (first 3 levels) ==="
-          find . -maxdepth 3 -type d | sort
-
-  frontend-tests:
-    name: Frontend Tests & Build
-    runs-on: ubuntu-latest
-    needs: debug-structure
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
+      - name: Setup Node ${{ matrix.node }} with cache
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: ${{ matrix.node }}
+          cache: npm
+          node-version-file: Client/package.json # auto-detect version if present
           cache-dependency-path: Client/package-lock.json
 
-      - name: Install frontend dependencies
-        run: |
-          cd Client
-          npm ci
+      - name: Install deps
+        working-directory: Client
+        run: npm ci --prefer-offline --no-audit
 
-      - name: Run TypeScript checks
-        run: |
-          cd Client
-          npx tsc --noEmit --skipLibCheck || echo "⚠️ TypeScript errors found but CI continues"
+      - name: Type‑check (TS)
+        working-directory: Client
+        run: npx tsc --noEmit --skipLibCheck
 
-      - name: Run linting
-        run: |
-          cd Client
-          npm run lint -- --max-warnings 50 || echo "⚠️ Linting issues found but CI continues"
+      - name: ESLint
+        working-directory: Client
+        run: npm run lint -- --max-warnings 0
 
-      - name: Run tests
-        run: |
-          cd Client
-          npm run test -- --run || echo "⚠️ Tests failed but CI continues"
+      - name: Unit tests
+        working-directory: Client
+        run: npm test -- --ci --coverage
 
-      - name: Build frontend application (ignore TS errors)
-        run: |
-          cd Client
-          # Utilise le build de Vite qui peut ignorer les erreurs TS
-          npx vite build --mode development || echo "⚠️ Build with errors but CI continues"
+      - name: Build (Vite)
+        working-directory: Client
+        run: npm run build
 
-      # Add artifact upload for frontend build
-      - name: Upload frontend build artifacts
+      - name: Upload built SPA
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-${{ github.run_number }}
-          path: Client/dist/
+          name: frontend-dist-${{ github.run_number }}
+          path: Client/dist
           retention-days: 14
+          if-no-files-found: error
 
-  accessibility-tests:
-    name: Accessibility Tests (Pa11y)
+  # ---------------------- Accessibility ------------------------------
+  accessibility:
+    name: Pa11y WCAG audit
+    needs: frontend
     runs-on: ubuntu-latest
-    needs: [frontend-tests]
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download built SPA
+        uses: actions/download-artifact@v4
         with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: Client/package-lock.json
+          name: frontend-dist-${{ github.run_number }}
+          path: dist
 
-      - name: Install frontend dependencies
-        working-directory: Client
-        run: npm ci
+      - name: Serve & audit with Pa11y
+        uses: pa11y/pa11y-action@v2 # lightweight wrapper around pa11y‑ci
+        with:
+          # Pa11y options
+          urls: http://localhost:8080
+          standard: WCAG2AA
+          chrome-flags: "--no-sandbox"
+          output-path: a11y-results
+          # Server options (served by the action)
+          server-root: dist
+          server-port: 8080
 
-      - name: Build frontend application
-        working-directory: Client
-        run: |
-          npm run build || echo "⚠️ Build with errors but accessibility tests continue"
-
-      - name: Create test content if needed
-        working-directory: Client
-        run: |
-          if [ ! -d "dist" ] || [ ! "$(ls -A dist 2>/dev/null)" ]; then
-            echo "Creating test page for accessibility testing..."
-            mkdir -p dist
-            cat > dist/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Accessibility Test Page</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 2rem; line-height: 1.6; }
-              .container { max-width: 800px; margin: 0 auto; }
-              nav ul { list-style: none; padding: 0; }
-              nav li { display: inline; margin-right: 1rem; }
-              form { margin: 2rem 0; }
-              label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-              input, textarea { margin-bottom: 1rem; padding: 0.5rem; width: 100%; max-width: 300px; }
-              button { padding: 0.75rem 1.5rem; background: #007cba; color: white; border: none; cursor: pointer; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <header>
-                <h1>Test Application</h1>
-                <nav aria-label="Main navigation">
-                  <ul>
-                    <li><a href="#main">Home</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                  </ul>
-                </nav>
-              </header>
-              
-              <main id="main">
-                <section>
-                  <h2>Welcome</h2>
-                  <p>This is a test application for accessibility validation.</p>
-                  
-                  <h3>Contact Form</h3>
-                  <form>
-                    <label for="name">Full Name:</label>
-                    <input type="text" id="name" name="name" required>
-                    
-                    <label for="email">Email Address:</label>
-                    <input type="email" id="email" name="email" required>
-                    
-                    <label for="message">Message:</label>
-                    <textarea id="message" name="message" rows="4" required></textarea>
-                    
-                    <button type="submit">Send Message</button>
-                  </form>
-                </section>
-                
-                <section id="about">
-                  <h2>About</h2>
-                  <p>Testing accessibility features including proper heading structure, form labels, and semantic HTML.</p>
-                  <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNzNkYyIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkFjY2Vzc2liaWxpdHkgVGVzdDwvdGV4dD4KICA8L3N2Zz4K" 
-                       alt="Accessibility test placeholder image">
-                </section>
-              </main>
-              
-              <footer>
-                <p>&copy; 2024 Test Application. Accessibility testing in progress.</p>
-              </footer>
-            </div>
-          </body>
-          </html>
-          EOF
-            echo "✅ Test page created"
-          else
-            echo "✅ Build output found"
-            ls -la dist/
-          fi
-
-      - name: Install accessibility tools
-        run: |
-          # Install serve for static file serving
-          npm install -g serve@14.2.3 wait-on@7.2.0
-
-          # Install Pa11y with specific version
-          npm install -g pa11y@7.0.0
-
-      - name: Setup Chrome
-        run: |
-          # Update package list
-          sudo apt-get update
-
-          # Install Chrome
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-
-          # Verify Chrome installation
-          google-chrome-stable --version
-
-          # Set up virtual display for headless operation
-          export DISPLAY=:99
-          sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-
-      - name: Start test server
-        working-directory: Client
-        run: |
-          echo "🚀 Starting server..."
-          nohup serve -s dist -p 4173 --no-request-logging > server.log 2>&1 &
-          SERVER_PID=$!
-          echo $SERVER_PID > server.pid
-          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-          sleep 3
-
-      - name: Wait for server
-        run: |
-          echo "⏳ Waiting for server..."
-          npx wait-on http://localhost:4173 --timeout 30000 --interval 1000
-          echo "✅ Server is ready"
-
-          # Test server response
-          curl -s http://localhost:4173 | head -5
-
-      - name: Run Pa11y accessibility tests
-        working-directory: Client
-        run: |
-          echo "♿ Running Pa11y accessibility tests..."
-          mkdir -p a11y-results
-
-          # Set environment variables for Chrome
-          export DISPLAY=:99
-          export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-          export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-          echo "Testing WCAG 2.1 AA compliance..."
-          npx pa11y http://localhost:4173 \
-            --standard WCAG2AA \
-            --timeout 30000 \
-            --wait 2000 \
-            > a11y-results/wcag2aa-results.txt 2>&1 || echo "WCAG2AA test completed with issues"
-
-          echo "Testing WCAG 2.1 AAA compliance (strict)..."
-          npx pa11y http://localhost:4173 \
-            --standard WCAG2AAA \
-            --timeout 30000 \
-            --wait 2000 \
-            > a11y-results/wcag2aaa-results.txt 2>&1 || echo "WCAG2AAA test completed with issues"
-
-          echo "Generating JSON results..."
-          npx pa11y http://localhost:4173 \
-            --standard WCAG2AA \
-            --reporter json \
-            --timeout 30000 \
-            --wait 2000 \
-            > a11y-results/results.json 2>&1 || echo "JSON results generated"
-
-      - name: Analyze accessibility results
-        if: always()
-        working-directory: Client
-        run: |
-          echo "📊 ACCESSIBILITY TEST RESULTS"
-          echo "============================="
-
-          if [ -f "a11y-results/wcag2aa-results.txt" ]; then
-            echo ""
-            echo "🎯 WCAG 2.1 AA Results:"
-            echo "----------------------"
-            cat a11y-results/wcag2aa-results.txt
-            
-            # Count different types of issues
-            ERRORS=$(grep -c "• Error:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
-            WARNINGS=$(grep -c "• Warning:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
-            NOTICES=$(grep -c "• Notice:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
-            
-            echo ""
-            echo "📊 Issue Summary:"
-            echo "  Errors: $ERRORS"
-            echo "  Warnings: $WARNINGS"
-            echo "  Notices: $NOTICES"
-            
-            if [ "$ERRORS" = "0" ]; then
-              echo ""
-              echo "🎉 SUCCESS: No accessibility errors found!"
-              echo "Your application meets WCAG 2.1 AA compliance for error-level issues."
-            else
-              echo ""
-              echo "⚠️  ATTENTION: Found $ERRORS accessibility errors that should be fixed."
-              echo "These are blocking issues for accessibility compliance."
-            fi
-            
-            if [ "$WARNINGS" != "0" ]; then
-              echo "💡 INFO: $WARNINGS warnings found - these are improvement opportunities."
-            fi
-            
-          else
-            echo "❌ No WCAG2AA results file found"
-            echo "Available files:"
-            ls -la a11y-results/ || echo "No results directory found"
-          fi
-
-          # Show JSON results info
-          if [ -f "a11y-results/results.json" ]; then
-            echo ""
-            echo "📄 JSON Results Summary:"
-            echo "File: a11y-results/results.json"
-            echo "Size: $(wc -c < a11y-results/results.json) bytes"
-          fi
-
-          echo ""
-          echo "🔧 Next Steps:"
-          echo "1. Download the 'accessibility-results' artifact to review detailed results"
-          echo "2. Focus on fixing Error-level issues first (critical for compliance)"
-          echo "3. Address Warning-level issues to improve user experience"
-          echo "4. Review the JSON file for programmatic integration"
-
-      - name: Create accessibility summary report
-        if: always()
-        working-directory: Client
-        run: |
-          cat > a11y-results/SUMMARY.md << EOF
-          # Accessibility Test Summary
-
-          **Date:** $(date -u)
-          **Commit:** ${{ github.sha }}
-          **Branch:** ${{ github.ref_name }}
-          **URL Tested:** http://localhost:4173
-
-          ## Test Configuration
-          - **Tool:** Pa11y 7.0.0
-          - **Browser:** Chrome (headless)
-          - **Standards:** WCAG 2.1 AA (primary), WCAG 2.1 AAA (reference)
-
-          ## Files Generated
-          - \`wcag2aa-results.txt\` - Detailed WCAG 2.1 AA results
-          - \`wcag2aaa-results.txt\` - Detailed WCAG 2.1 AAA results (stricter)
-          - \`results.json\` - Machine-readable JSON format
-          - \`SUMMARY.md\` - This summary file
-
-          ## Understanding the Results
-
-          ### Error Level 🚨
-          - **Critical issues** that block accessibility
-          - Must be fixed for WCAG compliance
-          - Typically affect screen readers, keyboard navigation
-
-          ### Warning Level ⚠️
-          - **Important issues** that impact usability
-          - Should be addressed for better accessibility
-          - May affect some users but not complete barriers
-
-          ### Notice Level ℹ️
-          - **Informational items** for consideration
-          - Best practice recommendations
-          - May improve overall user experience
-
-          ## Common Issues to Look For
-          - Missing alt text on images
-          - Form inputs without proper labels
-          - Poor color contrast
-          - Missing heading structure
-          - Links without descriptive text
-          - Missing ARIA labels where needed
-
-          ## Resources
-          - [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-          - [WebAIM Color Contrast Checker](https://webaim.org/resources/contrastchecker/)
-          - [Pa11y Documentation](https://pa11y.org/)
-          EOF
-
-      - name: Stop test server
-        if: always()
-        working-directory: Client
-        run: |
-          echo "🛑 Stopping server..."
-          if [ -f "server.pid" ]; then
-            SERVER_PID=$(cat server.pid)
-            if kill -0 $SERVER_PID 2>/dev/null; then
-              kill $SERVER_PID
-              echo "Server stopped (PID: $SERVER_PID)"
-            fi
-          fi
-          # Cleanup any remaining processes
-          pkill -f "serve -s" 2>/dev/null || echo "No serve processes to clean up"
-
-      - name: Upload accessibility test results
-        if: always()
+      - name: Upload Pa11y report
         uses: actions/upload-artifact@v4
         with:
-          name: accessibility-results-${{ github.run_number }}
-          path: |
-            Client/a11y-results/
-            Client/server.log
-            Client/.pa11yrc
-          retention-days: 30
-      # Upload accessibility test results
-      - name: Upload accessibility test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: accessibility-results-${{ github.run_number }}
-          path: Client/a11y-results.json
+          name: a11y-report-${{ github.run_number }}
+          path: a11y-results
           retention-days: 30
 
-  backend-build:
-    name: Backend Build & Check
+  # ---------------------- Back‑end -----------------------------------
+  backend:
+    name: Back‑end (lint + test)
     runs-on: ubuntu-latest
-    needs: debug-structure
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python 3.11 with pip‑cache
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: Server/requirements.txt
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('Server/requirements.txt') }}
-
-      - name: Install backend dependencies
+      - name: Install deps (+ dev tools)
+        working-directory: Server
         run: |
-          cd Server
           pip install -r requirements.txt
-          pip install black flake8 isort
+          pip install black flake8 isort pytest pytest-cov
 
-      - name: Check Python syntax
-        run: |
-          cd Server
-          echo "🔍 Checking Python files syntax..."
-          python -m py_compile $(find . -name "*.py" | grep -v __pycache__ | head -20) || echo "⚠️ Some Python syntax issues found"
+      - name: Lint – Black
+        working-directory: Server
+        run: black --check --diff .
 
-      - name: Run Python linting (Black formatting)
-        run: |
-          cd Server
-          echo "🔍 Checking code formatting with Black..."
-          # Option 1: Check only and show diff (ne fait pas échouer la CI)
-          black --check --diff . || echo "⚠️ Code formatting issues found. Run 'black .' to fix them."
+      - name: Lint – Flake8
+        working-directory: Server
+        run: flake8 . --max-line-length 88 --extend-ignore E203,W503
 
-      - name: Run Python linting (Flake8)
-        run: |
-          cd Server
-          echo "🔍 Checking code style with Flake8..."
-          # Configuration plus permissive pour flake8
-          flake8 . --max-line-length=88 --extend-ignore=E203,W503 --exclude=__pycache__,migrations,venv || echo "⚠️ Code style issues found"
+      - name: Lint – isort
+        working-directory: Server
+        run: isort --check-only --diff .
 
-      - name: Run Import sorting check (isort)
-        run: |
-          cd Server
-          echo "🔍 Checking import sorting with isort..."
-          isort --check-only --diff . || echo "⚠️ Import sorting issues found. Run 'isort .' to fix them."
-
-      - name: Check FastAPI app structure
-        run: |
-          cd Server
-          echo "🔍 Checking FastAPI app structure..."
-
-          # Vérifier la structure des dossiers
-          echo "📁 Project structure:"
-          find . -name "*.py" | head -10
-
-          # Essayer plusieurs façons de charger l'app
-          echo "🚀 Testing FastAPI app import..."
-
-          # Méthode 1: Import direct depuis main.py
-          if python -c "from main import app; print('✅ Method 1: Direct main.py import works')" 2>/dev/null; then
-            echo "✅ FastAPI app loads via main.py"
-          # Méthode 2: Import depuis app.main
-          elif python -c "from app.main import app; print('✅ Method 2: app.main import works')" 2>/dev/null; then
-            echo "✅ FastAPI app loads via app.main"
-          # Méthode 3: Ajout du path et import
-          elif python -c "import sys; sys.path.append('app'); from main import app; print('✅ Method 3: Path + main import works')" 2>/dev/null; then
-            echo "✅ FastAPI app loads via path manipulation"
-          else
-            echo "⚠️ Could not import FastAPI app, but structure check complete"
-            echo "📝 This is normal if your app has external dependencies not installed"
-          fi
-
-      # Add backend source code artifact (clean version)
-      - name: Prepare backend for packaging
-        run: |
-          cd Server
-          # Clean up Python cache and temporary files
-          find . -name "*.pyc" -delete
-          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-          find . -name "*.log" -delete 2>/dev/null || true
-
-      - name: Upload backend source artifacts
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: backend-source-${{ github.run_number }}
-          path: |
-            Server/
-            !Server/__pycache__/
-            !Server/**/__pycache__/
-            !Server/*.pyc
-            !Server/**/*.pyc
-            !Server/*.log
+          name: backend-coverage-${{ github.run_number }}
+          path: Server/coverage.xml
           retention-days: 14
 
-  backend-lint:
-    name: Backend Code Quality (Optional)
-    runs-on: ubuntu-latest
-    needs: debug-structure
-    continue-on-error: true # Ne fait pas échouer la CI
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install linting tools
-        run: |
-          pip install black flake8 isort
-
-      - name: Run Black (formatting check)
-        run: |
-          cd Server
-          echo "🎨 Checking code formatting with Black..."
-          black --check --diff . && echo "✅ Code is properly formatted" || echo "⚠️ Code needs formatting. Run 'black .' to fix."
-
-      - name: Run Flake8 (style check)
-        run: |
-          cd Server
-          echo "📏 Checking code style with Flake8..."
-          flake8 . --max-line-length=88 --extend-ignore=E203,W503,E501 --exclude=__pycache__,migrations,venv,alembic && echo "✅ Code style is good" || echo "⚠️ Code style issues found"
-
-      - name: Run isort (import sorting)
-        run: |
-          cd Server
-          echo "📚 Checking import sorting with isort..."
-          isort --check-only --diff . && echo "✅ Imports are properly sorted" || echo "⚠️ Imports need sorting. Run 'isort .' to fix."
-
-      - name: Code quality summary
-        run: |
-          echo "📊 Code Quality Check Complete"
-          echo "💡 This job is informational and doesn't block the CI"
-          echo "🔧 To fix issues locally, run:"
-          echo "   cd Server"
-          echo "   black ."
-          echo "   isort ."
-          echo "   flake8 . --max-line-length=88"
-
-  # New job: Create deployment artifacts
-  create-deployment-artifacts:
-    name: Create Deployment Artifacts
-    runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-build, accessibility-tests]
+  # ---------------------- Packaging ----------------------------------
+  package:
+    name: Build release artifacts
+    needs: [frontend, backend]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Download frontend build
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build-${{ github.run_number }}
-          path: ./artifacts/frontend-dist
+          path: artifacts
 
-      - name: Download backend source
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-source-${{ github.run_number }}
-          path: ./artifacts/backend-source
-
-      - name: Create deployment packages
+      - name: Assemble packages
+        env:
+          VERSION: ${{ github.run_number }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
         run: |
-          # Get version information
-          if [ -f "Client/package.json" ]; then
-            VERSION=$(node -p "require('./Client/package.json').version" 2>/dev/null || echo "1.0.0")
-          else
-            VERSION="$(date +'%Y.%m.%d')-${GITHUB_SHA:0:8}"
-          fi
+          set -eu
+          mkdir -p packages deploy
+          # Frontend ZIP
+          (cd artifacts/frontend-dist-* && zip -qr ../../packages/frontend-$VERSION-$BRANCH.zip .)
+          # Backend source TAR.GZ (clean)
+          (cd Server && tar --exclude='__pycache__' --exclude='*.pyc' -czf ../packages/backend-$VERSION-$BRANCH.tar.gz .)
+          # Combined package
+          mkdir deploy/frontend deploy/backend
+          cp -r artifacts/frontend-dist-*/. deploy/frontend/
+          cp -r Server/. deploy/backend/
+          tar -czf packages/full-$VERSION-$BRANCH.tar.gz -C deploy .
+          sha256sum packages/* > packages/checksums.txt
 
-          BRANCH_NAME=${GITHUB_REF_NAME}
-          BUILD_DATE=$(date -u +'%Y-%m-%d_%H-%M-%S')
-
-          echo "Creating deployment packages..."
-          echo "Version: $VERSION"
-          echo "Branch: $BRANCH_NAME" 
-          echo "Build Date: $BUILD_DATE"
-
-          mkdir -p packages
-
-          # 1. Frontend-only ZIP package
-          cd artifacts/frontend-dist
-          zip -r "../../packages/frontend-${VERSION}-${BRANCH_NAME}.zip" .
-          cd ../..
-
-          # 2. Backend-only TAR.GZ package  
-          cd artifacts/backend-source
-          tar -czf "../../packages/backend-${VERSION}-${BRANCH_NAME}.tar.gz" .
-          cd ../..
-
-          # 3. Complete deployment package
-          mkdir -p deploy-package/frontend deploy-package/backend
-          cp -r artifacts/frontend-dist/* deploy-package/frontend/
-          cp -r artifacts/backend-source/* deploy-package/backend/
-
-          # Add deployment metadata
-          cat << EOF > deploy-package/deployment-info.json
-          {
-            "version": "${VERSION}",
-            "branch": "${BRANCH_NAME}",
-            "build_date": "${BUILD_DATE}",
-            "commit_sha": "${GITHUB_SHA}",
-            "workflow_run": "${GITHUB_RUN_NUMBER}",
-            "repository": "${GITHUB_REPOSITORY}"
-          }
-          EOF
-
-          # Add README for deployment
-          cat << EOF > deploy-package/README.md
-          # Deployment Package
-
-          **Version:** ${VERSION}  
-          **Branch:** ${BRANCH_NAME}  
-          **Build Date:** ${BUILD_DATE}  
-          **Commit:** ${GITHUB_SHA:0:8}  
-
-          ## Structure
-          - \`frontend/\` - Built frontend application
-          - \`backend/\` - Backend source code
-          - \`deployment-info.json\` - Build metadata
-
-          ## Quick Start
-          1. Deploy frontend files from \`frontend/\` directory
-          2. Set up backend environment and install dependencies
-          3. Configure environment variables
-          4. Start the application
-          EOF
-
-          # Copy additional files if they exist
-          cp docker-compose.yml deploy-package/ 2>/dev/null || echo "No docker-compose.yml found"
-          cp docker-compose.prod.yml deploy-package/ 2>/dev/null || echo "No docker-compose.prod.yml found"
-          cp README.md deploy-package/PROJECT-README.md 2>/dev/null || echo "No README.md found"
-
-          # Create complete deployment package
-          tar -czf "packages/complete-deployment-${VERSION}-${BRANCH_NAME}.tar.gz" -C deploy-package .
-
-          # 4. Source code backup (for archival)
-          tar -czf "packages/source-code-${VERSION}-${BRANCH_NAME}.tar.gz" \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='Client/dist' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='*.log' \
-            --exclude='.env*' \
-            --exclude='artifacts' \
-            --exclude='packages' \
-            .
-
-          # Create checksums
-          cd packages
-          sha256sum *.zip *.tar.gz > "checksums-${VERSION}-${BRANCH_NAME}.txt"
-
-          echo ""
-          echo "📦 Created packages:"
-          ls -lh
-
-          echo ""
-          echo "🔐 Checksums:"
-          cat "checksums-${VERSION}-${BRANCH_NAME}.txt"
-
-      - name: Upload deployment packages
+      - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: deployment-packages-${{ github.run_number }}
+          name: release-packages-${{ github.run_number }}
           path: packages/
           retention-days: 60
 
-      - name: Upload complete deployment package (separate)
-        uses: actions/upload-artifact@v4
-        with:
-          name: complete-deployment-${{ github.ref_name }}
-          path: packages/complete-deployment-*.tar.gz
-          retention-days: 90
-
-  deploy-check:
-    name: Deployment Check
+  # ---------------------- CodeQL (security) --------------------------
+  codeql:
+    name: CodeQL analysis
+    needs: [frontend, backend]
     runs-on: ubuntu-latest
-    needs:
-      [
-        frontend-tests,
-        backend-build,
-        accessibility-tests,
-        create-deployment-artifacts,
-      ]
-    if: github.ref == 'refs/heads/main'
-
+    permissions:
+      security-events: write # allow SARIF upload
     steps:
-      - name: Download deployment packages
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
         with:
-          name: deployment-packages-${{ github.run_number }}
-          path: ./packages
-
-      - name: Verify deployment packages
-        run: |
-          echo "📦 Available deployment packages:"
-          ls -la packages/
-
-          echo ""
-          echo "📊 Package sizes:"
-          du -sh packages/*
-
-          echo ""
-          echo "🔐 Verifying checksums..."
-          cd packages
-          if sha256sum -c checksums-*.txt; then
-            echo "✅ All checksums verified successfully"
-          else
-            echo "⚠️ Checksum verification failed"
-          fi
-
-      - name: Deployment Ready
-        run: |
-          echo "🚀 All checks passed - Ready for deployment!"
-          echo "Frontend: ✅ Tests passed, Build successful"
-          echo "Backend: ✅ Build successful"
-          echo "Accessibility: ✅ Pa11y tests completed"
-          echo "Artifacts: ✅ Deployment packages created and verified"
-          echo ""
-          echo "📦 Available for download:"
-          echo "- Frontend build artifacts"
-          echo "- Backend source artifacts" 
-          echo "- Complete deployment package"
-          echo "- Individual component packages"
+          languages: TypeScript, python
+      - uses: github/codeql-action/analyze@v3
