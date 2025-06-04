@@ -5,8 +5,8 @@ import pathlib
 MODEL_PATH = (
     pathlib.Path(__file__)
     .resolve()
-    .parent        # → core
-    .parent        # → app
+    .parent        
+    .parent 
     / "models"
     / "pipeline.pkl"
 )
