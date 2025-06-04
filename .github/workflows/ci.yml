@@ -197,4 +197,4 @@ jobs:
       - name: Deploy to staging
         run: |
           echo "Déploiement vers l'environnement de staging"
-          # Ajoutez ici vos commandes de déploiement
+          # Ajoutez ici vos commandes de déploiemen
