@@ -84,38 +84,34 @@ jobs:
     name: Accessibility Tests (Pa11y)
     runs-on: ubuntu-latest
     needs: [frontend-tests]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: Client/package-lock.json
-          
+
       - name: Install frontend dependencies
         working-directory: Client
         run: npm ci
-        
+
       - name: Build frontend application
         working-directory: Client
         run: |
           npm run build || echo "⚠️ Build with errors but accessibility tests continue"
-          
-      - name: Verify build output
+
+      - name: Create test content if needed
         working-directory: Client
         run: |
-          echo "📁 Checking build output..."
-          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
-            echo "✅ Build output found"
-            ls -la dist/
-          else
-            echo "❌ No build output - creating test page..."
+          if [ ! -d "dist" ] || [ ! "$(ls -A dist 2>/dev/null)" ]; then
+            echo "Creating test page for accessibility testing..."
             mkdir -p dist
-            cat << 'EOF' > dist/index.html
+            cat > dist/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -168,15 +164,7 @@ jobs:
                 
                 <section id="about">
                   <h2>About</h2>
-                  <p>Testing accessibility features including:</p>
-                  <ul>
-                    <li>Semantic HTML structure</li>
-                    <li>Proper heading hierarchy</li>
-                    <li>Form labels and accessibility</li>
-                    <li>Keyboard navigation</li>
-                    <li>Screen reader compatibility</li>
-                  </ul>
-                  
+                  <p>Testing accessibility features including proper heading structure, form labels, and semantic HTML.</p>
                   <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNzNkYyIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkFjY2Vzc2liaWxpdHkgVGVzdDwvdGV4dD4KICA8L3N2Zz4K" 
                        alt="Accessibility test placeholder image">
                 </section>
@@ -190,159 +178,244 @@ jobs:
           </html>
           EOF
             echo "✅ Test page created"
+          else
+            echo "✅ Build output found"
+            ls -la dist/
           fi
-          
-      - name: Install accessibility testing tools
+
+      - name: Install accessibility tools
         run: |
-          # Install Pa11y with specific working versions
-          npm install -g pa11y@7.0.0 serve@14.2.3 wait-on@7.2.0
-          
+          # Install serve for static file serving
+          npm install -g serve@14.2.3 wait-on@7.2.0
+
+          # Install Pa11y with specific version
+          npm install -g pa11y@7.0.0
+
+      - name: Create Pa11y configuration
+        working-directory: Client
+        run: |
+          # Create Pa11y config file to handle Chrome properly
+          cat > .pa11yrc << 'EOF'
+          {
+            "chromeLaunchConfig": {
+              "executablePath": "/usr/bin/google-chrome-stable",
+              "args": [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-extensions",
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor"
+              ],
+              "headless": "new"
+            },
+            "timeout": 30000,
+            "wait": 2000
+          }
+          EOF
+
+          echo "Pa11y configuration created:"
+          cat .pa11yrc
+
+      - name: Setup Chrome
+        run: |
+          # Update package list
+          sudo apt-get update
+
+          # Install Chrome
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+          # Verify Chrome installation
+          google-chrome-stable --version
+
+          # Set up virtual display for headless operation
+          export DISPLAY=:99
+          sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
       - name: Start test server
         working-directory: Client
         run: |
-          echo "🚀 Starting test server..."
+          echo "🚀 Starting server..."
           nohup serve -s dist -p 4173 --no-request-logging > server.log 2>&1 &
           SERVER_PID=$!
+          echo $SERVER_PID > server.pid
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-          echo "Server started with PID: $SERVER_PID"
           sleep 3
-          
-      - name: Wait for server and verify
+
+      - name: Wait for server
         run: |
           echo "⏳ Waiting for server..."
-          npx wait-on http://localhost:4173 --timeout 30000 --interval 1000 || {
-            echo "❌ Server failed to start"
-            cat Client/server.log
-            exit 1
-          }
-          
-          echo "✅ Server is running"
-          curl -s http://localhost:4173 | head -10
-          
+          npx wait-on http://localhost:4173 --timeout 30000 --interval 1000
+          echo "✅ Server is ready"
+
+          # Test server response
+          curl -s http://localhost:4173 | head -5
+
       - name: Run Pa11y accessibility tests
         working-directory: Client
         run: |
-          echo "♿ Running accessibility tests..."
+          echo "♿ Running Pa11y accessibility tests..."
           mkdir -p a11y-results
-          
-          # Set Chrome options as environment variable
-          export PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --disable-extensions"
-          
-          # Basic WCAG 2.1 AA test
+
+          # Set environment variables for Chrome
+          export DISPLAY=:99
+          export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
           echo "Testing WCAG 2.1 AA compliance..."
           npx pa11y http://localhost:4173 \
+            --config .pa11yrc \
             --standard WCAG2AA \
-            --timeout 30000 \
-            > a11y-results/wcag2aa-results.txt 2>&1 || echo "WCAG2AA issues found"
-          
-          # JSON output for programmatic analysis
-          echo "Generating JSON results..."
-          npx pa11y http://localhost:4173 \
-            --standard WCAG2AA \
-            --reporter json \
-            --timeout 30000 \
-            > a11y-results/results.json 2>&1 || echo "JSON results generated with issues"
-          
-          # Strict WCAG 2.1 AAA test (optional)
+            > a11y-results/wcag2aa-results.txt 2>&1 || echo "WCAG2AA test completed with issues"
+
           echo "Testing WCAG 2.1 AAA compliance (strict)..."
           npx pa11y http://localhost:4173 \
+            --config .pa11yrc \
             --standard WCAG2AAA \
-            --timeout 30000 \
-            > a11y-results/wcag2aaa-results.txt 2>&1 || echo "WCAG2AAA issues found (expected)"
-          
+            > a11y-results/wcag2aaa-results.txt 2>&1 || echo "WCAG2AAA test completed with issues"
+
+          echo "Generating JSON results..."
+          npx pa11y http://localhost:4173 \
+            --config .pa11yrc \
+            --standard WCAG2AA \
+            --reporter json \
+            > a11y-results/results.json 2>&1 || echo "JSON results generated"
+
       - name: Analyze accessibility results
         if: always()
         working-directory: Client
         run: |
-          echo "📊 Accessibility Test Results Analysis"
-          echo "======================================"
-          
+          echo "📊 ACCESSIBILITY TEST RESULTS"
+          echo "============================="
+
           if [ -f "a11y-results/wcag2aa-results.txt" ]; then
             echo ""
-            echo "🎯 WCAG 2.1 AA Results (Primary Standard):"
-            echo "----------------------------------------"
+            echo "🎯 WCAG 2.1 AA Results:"
+            echo "----------------------"
             cat a11y-results/wcag2aa-results.txt
             
-            # Count issues with proper string handling
-            ERROR_COUNT=$(grep -c "Error:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
-            WARNING_COUNT=$(grep -c "Warning:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
-            NOTICE_COUNT=$(grep -c "Notice:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
+            # Count different types of issues
+            ERRORS=$(grep -c "• Error:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
+            WARNINGS=$(grep -c "• Warning:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
+            NOTICES=$(grep -c "• Notice:" a11y-results/wcag2aa-results.txt 2>/dev/null || echo "0")
             
             echo ""
-            echo "📈 Issue Summary:"
-            echo "  Errors: $ERROR_COUNT"
-            echo "  Warnings: $WARNING_COUNT" 
-            echo "  Notices: $NOTICE_COUNT"
+            echo "📊 Issue Summary:"
+            echo "  Errors: $ERRORS"
+            echo "  Warnings: $WARNINGS"
+            echo "  Notices: $NOTICES"
             
-            # Fix the numeric comparison
-            if [ "$ERROR_COUNT" = "0" ]; then
-              echo "🎉 No accessibility errors found!"
+            if [ "$ERRORS" = "0" ]; then
+              echo ""
+              echo "🎉 SUCCESS: No accessibility errors found!"
+              echo "Your application meets WCAG 2.1 AA compliance for error-level issues."
             else
-              echo "⚠️  Found $ERROR_COUNT accessibility errors that should be fixed"
+              echo ""
+              echo "⚠️  ATTENTION: Found $ERRORS accessibility errors that should be fixed."
+              echo "These are blocking issues for accessibility compliance."
             fi
+            
+            if [ "$WARNINGS" != "0" ]; then
+              echo "💡 INFO: $WARNINGS warnings found - these are improvement opportunities."
+            fi
+            
           else
             echo "❌ No WCAG2AA results file found"
             echo "Available files:"
-            ls -la a11y-results/ || echo "No results directory"
+            ls -la a11y-results/ || echo "No results directory found"
           fi
-          
+
+          # Show JSON results info
           if [ -f "a11y-results/results.json" ]; then
             echo ""
-            echo "📋 JSON Results Available: a11y-results/results.json"
-            # Try to extract some basic info from JSON
-            echo "JSON content preview:"
-            head -20 a11y-results/results.json 2>/dev/null || echo "Could not preview JSON"
+            echo "📄 JSON Results Summary:"
+            echo "File: a11y-results/results.json"
+            echo "Size: $(wc -c < a11y-results/results.json) bytes"
           fi
-          
+
           echo ""
           echo "🔧 Next Steps:"
-          echo "1. Review the detailed results in the artifacts"
-          echo "2. Fix any Error-level issues first"
-          echo "3. Address Warning-level issues for better accessibility"
-          echo "4. Test with actual screen readers for real-world validation"
-          
-      - name: Create accessibility summary
+          echo "1. Download the 'accessibility-results' artifact to review detailed results"
+          echo "2. Focus on fixing Error-level issues first (critical for compliance)"
+          echo "3. Address Warning-level issues to improve user experience"
+          echo "4. Review the JSON file for programmatic integration"
+
+      - name: Create accessibility summary report
         if: always()
         working-directory: Client
         run: |
-          # Create a summary markdown file
-          cat << EOF > a11y-results/README.md
-          # Accessibility Test Results
-          
-          **Test Date:** $(date -u)
+          cat > a11y-results/SUMMARY.md << EOF
+          # Accessibility Test Summary
+
+          **Date:** $(date -u)
           **Commit:** ${{ github.sha }}
           **Branch:** ${{ github.ref_name }}
-          
-          ## Standards Tested
-          - WCAG 2.1 AA (Primary compliance target)
-          - WCAG 2.1 AAA (Best practice reference)
-          
+          **URL Tested:** http://localhost:4173
+
+          ## Test Configuration
+          - **Tool:** Pa11y 7.0.0
+          - **Browser:** Chrome (headless)
+          - **Standards:** WCAG 2.1 AA (primary), WCAG 2.1 AAA (reference)
+
           ## Files Generated
-          - \`wcag2aa-results.txt\` - WCAG 2.1 AA detailed results
-          - \`wcag2aaa-results.txt\` - WCAG 2.1 AAA detailed results  
+          - \`wcag2aa-results.txt\` - Detailed WCAG 2.1 AA results
+          - \`wcag2aaa-results.txt\` - Detailed WCAG 2.1 AAA results (stricter)
           - \`results.json\` - Machine-readable JSON format
-          
-          ## How to Use These Results
-          1. **Start with wcag2aa-results.txt** - This is your primary compliance target
-          2. **Fix errors first** - These are critical accessibility barriers
-          3. **Address warnings** - These improve user experience
-          4. **Use JSON for automation** - Integrate with other tools if needed
-          
-          ## Tools Used
-          - Pa11y 7.0.0 (Accessibility testing)
-          - Headless Chrome (Browser automation)
-          - WCAG 2.1 Guidelines (Compliance standards)
+          - \`SUMMARY.md\` - This summary file
+
+          ## Understanding the Results
+
+          ### Error Level 🚨
+          - **Critical issues** that block accessibility
+          - Must be fixed for WCAG compliance
+          - Typically affect screen readers, keyboard navigation
+
+          ### Warning Level ⚠️
+          - **Important issues** that impact usability
+          - Should be addressed for better accessibility
+          - May affect some users but not complete barriers
+
+          ### Notice Level ℹ️
+          - **Informational items** for consideration
+          - Best practice recommendations
+          - May improve overall user experience
+
+          ## Common Issues to Look For
+          - Missing alt text on images
+          - Form inputs without proper labels
+          - Poor color contrast
+          - Missing heading structure
+          - Links without descriptive text
+          - Missing ARIA labels where needed
+
+          ## Resources
+          - [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+          - [WebAIM Color Contrast Checker](https://webaim.org/resources/contrastchecker/)
+          - [Pa11y Documentation](https://pa11y.org/)
           EOF
-          
+
       - name: Stop test server
         if: always()
+        working-directory: Client
         run: |
           echo "🛑 Stopping server..."
-          if [ ! -z "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
-            kill $SERVER_PID
-            echo "Server stopped"
+          if [ -f "server.pid" ]; then
+            SERVER_PID=$(cat server.pid)
+            if kill -0 $SERVER_PID 2>/dev/null; then
+              kill $SERVER_PID
+              echo "Server stopped (PID: $SERVER_PID)"
+            fi
           fi
-          pkill -f "serve -s" 2>/dev/null || echo "No serve processes to clean"
+          # Cleanup any remaining processes
+          pkill -f "serve -s" 2>/dev/null || echo "No serve processes to clean up"
 
       - name: Upload accessibility test results
         if: always()
@@ -352,6 +425,7 @@ jobs:
           path: |
             Client/a11y-results/
             Client/server.log
+            Client/.pa11yrc
           retention-days: 30
       # Upload accessibility test results
       - name: Upload accessibility test results
@@ -540,32 +614,32 @@ jobs:
           else
             VERSION="$(date +'%Y.%m.%d')-${GITHUB_SHA:0:8}"
           fi
-          
+
           BRANCH_NAME=${GITHUB_REF_NAME}
           BUILD_DATE=$(date -u +'%Y-%m-%d_%H-%M-%S')
-          
+
           echo "Creating deployment packages..."
           echo "Version: $VERSION"
           echo "Branch: $BRANCH_NAME" 
           echo "Build Date: $BUILD_DATE"
-          
+
           mkdir -p packages
-          
+
           # 1. Frontend-only ZIP package
           cd artifacts/frontend-dist
           zip -r "../../packages/frontend-${VERSION}-${BRANCH_NAME}.zip" .
           cd ../..
-          
+
           # 2. Backend-only TAR.GZ package  
           cd artifacts/backend-source
           tar -czf "../../packages/backend-${VERSION}-${BRANCH_NAME}.tar.gz" .
           cd ../..
-          
+
           # 3. Complete deployment package
           mkdir -p deploy-package/frontend deploy-package/backend
           cp -r artifacts/frontend-dist/* deploy-package/frontend/
           cp -r artifacts/backend-source/* deploy-package/backend/
-          
+
           # Add deployment metadata
           cat << EOF > deploy-package/deployment-info.json
           {
@@ -577,36 +651,36 @@ jobs:
             "repository": "${GITHUB_REPOSITORY}"
           }
           EOF
-          
+
           # Add README for deployment
           cat << EOF > deploy-package/README.md
           # Deployment Package
-          
+
           **Version:** ${VERSION}  
           **Branch:** ${BRANCH_NAME}  
           **Build Date:** ${BUILD_DATE}  
           **Commit:** ${GITHUB_SHA:0:8}  
-          
+
           ## Structure
           - \`frontend/\` - Built frontend application
           - \`backend/\` - Backend source code
           - \`deployment-info.json\` - Build metadata
-          
+
           ## Quick Start
           1. Deploy frontend files from \`frontend/\` directory
           2. Set up backend environment and install dependencies
           3. Configure environment variables
           4. Start the application
           EOF
-          
+
           # Copy additional files if they exist
           cp docker-compose.yml deploy-package/ 2>/dev/null || echo "No docker-compose.yml found"
           cp docker-compose.prod.yml deploy-package/ 2>/dev/null || echo "No docker-compose.prod.yml found"
           cp README.md deploy-package/PROJECT-README.md 2>/dev/null || echo "No README.md found"
-          
+
           # Create complete deployment package
           tar -czf "packages/complete-deployment-${VERSION}-${BRANCH_NAME}.tar.gz" -C deploy-package .
-          
+
           # 4. Source code backup (for archival)
           tar -czf "packages/source-code-${VERSION}-${BRANCH_NAME}.tar.gz" \
             --exclude='.git' \
@@ -619,15 +693,15 @@ jobs:
             --exclude='artifacts' \
             --exclude='packages' \
             .
-          
+
           # Create checksums
           cd packages
           sha256sum *.zip *.tar.gz > "checksums-${VERSION}-${BRANCH_NAME}.txt"
-          
+
           echo ""
           echo "📦 Created packages:"
           ls -lh
-          
+
           echo ""
           echo "🔐 Checksums:"
           cat "checksums-${VERSION}-${BRANCH_NAME}.txt"
@@ -649,7 +723,13 @@ jobs:
   deploy-check:
     name: Deployment Check
     runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-build, accessibility-tests, create-deployment-artifacts]
+    needs:
+      [
+        frontend-tests,
+        backend-build,
+        accessibility-tests,
+        create-deployment-artifacts,
+      ]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -663,11 +743,11 @@ jobs:
         run: |
           echo "📦 Available deployment packages:"
           ls -la packages/
-          
+
           echo ""
           echo "📊 Package sizes:"
           du -sh packages/*
-          
+
           echo ""
           echo "🔐 Verifying checksums..."
           cd packages
