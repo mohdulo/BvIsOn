@@ -65,43 +65,39 @@ jobs:
           if-no-files-found: error
 
   # ---------------------- Accessibility ------------------------------
-  accessibility:
-  name: Pa11y WCAG audit
-  needs: frontend              # ← ajuste si ton job build se nomme différemment
-  runs-on: ubuntu-latest
+  accessibility: # ← ID du job
+    name: Pa11y WCAG audit
+    needs: frontend # dépend du job 'frontend'
+    runs-on: ubuntu-latest
 
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Récupère le build Vite/React généré dans le job "frontend"
-    - name: Download built SPA
-      uses: actions/download-artifact@v4
-      with:
-        name: frontend-dist-${{ github.run_number }}
-        path: dist
+      - name: Download built SPA
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.run_number }}
+          path: dist
 
-    # Sert le dossier et exécute Pa11y-CI
-    - name: Serve & audit with Pa11y
-      uses: pa11y/pa11y-action@v1.2.0   # dernière release disponible
-      with:
-        # Pa11y-CI options
-        urls: http://localhost:8080
-        standard: WCAG2AA
-        chrome-flags: "--no-sandbox"
-        output-path: a11y-results
+      - name: Serve & audit with Pa11y
+        uses: pa11y/pa11y-action@v1.2.0 # v2 n’existe pas encore
+        with:
+          # Options Pa11y-CI
+          urls: http://localhost:8080
+          standard: WCAG2AA
+          chrome-flags: "--no-sandbox"
+          output-path: a11y-results
+          # Serveur statique embarqué
+          server-root: dist
+          server-port: 8080
 
-        # Options du serveur statique embarqué par l’action
-        server-root: dist
-        server-port: 8080
-
-    # Archive les rapports (HTML, JSON, etc.) produits dans a11y-results/
-    - name: Upload Pa11y report
-      uses: actions/upload-artifact@v4
-      with:
-        name: a11y-report-${{ github.run_number }}
-        path: a11y-results
-        retention-days: 30
+      - name: Upload Pa11y report
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report-${{ github.run_number }}
+          path: a11y-results
+          retention-days: 30
   # ---------------------- Back‑end -----------------------------------
   backend:
     name: Back‑end (lint + test)
