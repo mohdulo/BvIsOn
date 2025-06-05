@@ -10,30 +10,28 @@ services:
     autoDeploy: true
     healthCheckPath: /
     envVars:
-      envVars:
-        - key: DB_HOST
-          value: db
-        - key: DB_PORT
-          value: "3306"
-        - key: DB_USER
-          value: mouha
-        - key: DB_PASSWORD
-          value: kali
-        - key: DB_NAME
-          value: Data
-        - key: DATABASE_URL
-          value: mysql+pymysql://mouha:kali@mysql:3306/Data
-        - key: API_PREFIX
-          value: "/api/v1"
-        - key: CORS_ORIGINS
-          value: "http://localhost:5173"
-        - key: JWT_SECRET_KEY
-          value: f0eb1ae1d7cd39aafa9f311367f90a9723c81f672d3b5692faf89973ec6599d8ff43fa797eea1e51667affa2f5161189e5bd9f6248fba5b20e79bc9b00d8018071d0f6d0fef12fbd9c147b4fe5911463282b4d6bd89bb56a1bca3e7a53cc55cd049cd67363a5505e6667ef4e69c2809c392d648e4df5b0f70388f10e50c268b65307b9920a28a035dbf78c2601949ff32f786e014ab4554b047d420efe339b380e73a140d67cfd37bbf994cb7963aadfc1e5e7ca1b3918d9b57d2394009cca65d2fe4b8fbe4a1aaa6ec3335a5be0f5e389200138f7c5fa0930a8b21bfce895359786fa8b6aa7d13cf168308ba65a2f09fa479b79f7b74fbf5dea5717aa6c7969
-        - key: JWT_ALGORITHM
-          value: HS256
-        - key: ACCESS_TOKEN_EXPIRE_MINUTES
-          value: "30"
-
+      - key: DB_HOST
+        value: db
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_USER
+        value: mouha
+      - key: DB_PASSWORD
+        value: kali
+      - key: DB_NAME
+        value: Data
+      - key: DATABASE_URL
+        value: mysql+pymysql://mouha:kali@mysql:3306/Data
+      - key: API_PREFIX
+        value: "/api/v1"
+      - key: CORS_ORIGINS
+        value: "http://localhost:5173"
+      - key: JWT_SECRET_KEY
+        value: f0eb1ae1d7cd39aafa9f311367f90a9723c81f672d3b5692faf89973ec6599d8ff43fa797eea1e51667affa2f5161189e5bd9f6248fba5b20e79bc9b00d8018071d0f6d0fef12fbd9c147b4fe5911463282b4d6bd89bb56a1bca3e7a53cc55cd049cd67363a5505e6667ef4e69c2809c392d648e4df5b0f70388f10e50c268b65307b9920a28a035dbf78c2601949ff32f786e014ab4554b047d420efe339b380e73a140d67cfd37bbf994cb7963aadfc1e5e7ca1b3918d9b57d2394009cca65d2fe4b8fbe4a1aaa6ec3335a5be0f5e389200138f7c5fa0930a8b21bfce895359786fa8b6aa7d13cf168308ba65a2f09fa479b79f7b74fbf5dea5717aa6c7969
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
 
   - type: web
     name: frontend
