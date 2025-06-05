@@ -21,7 +21,7 @@ services:
       - key: DB_PASSWORD
         value: kali
       - key: DB_NAME
-        value: Data
+        value: data
       - key: DATABASE_URL
         value: mysql+pymysql://mouha:kali@mysql:3306/data
       - key: API_PREFIX
