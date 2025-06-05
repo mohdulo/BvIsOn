@@ -36,7 +36,7 @@ app.add_middleware(
         "http://localhost:5173",  # Development
         "http://frontend:3000",  
         "http://localhost:3000",  # Alternative dev port
-        "*.onrender.com"  # Production
+        "https://frontend-qvkb.onrender.com"  # Production
     ],
     allow_credentials=True,
     allow_methods=["*"],
