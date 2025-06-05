@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: backend
+    env: docker
+    plan: free
+    repo: https://github.com/mohdulo/BvIsOn
+    branch: docker-bis
+    rootDir: Server
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+    envVarsFromFile:
+      - ./Server/.env
+    healthCheckPath: /
+
+  - type: web
+    name: frontend
+    env: docker
+    plan: free
+    repo: https://github.com/mohdulo/BvIsOn
+    branch: docker-bis
+    rootDir: Client
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+
+databases:
+  - name: mysql-db
+    plan: free
+    databaseName: Data
+    user: mouha
