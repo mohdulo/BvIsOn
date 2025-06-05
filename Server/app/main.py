@@ -134,6 +134,9 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # Routes - Authentification en premier (pas de restriction)
 app.include_router(auth.router, prefix="/api/v1")
+@app.get("/")
+async def root():
+    return {"status": "Backend is running"}
 
 # Routes protégées (nécessitent une authentification)
 app.include_router(covid.router, prefix="/api/v1")
