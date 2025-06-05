@@ -3,6 +3,7 @@ FROM python:3.11.2
 
 # Dossier de travail dans le conteneur
 WORKDIR /app
+RUN rm -f ./models/pipeline.pkl
 
 # ✅ Installer les dépendances système nécessaires
 RUN apt-get update && apt-get install -y \
@@ -17,6 +18,8 @@ RUN apt-get update && apt-get install -y \
 # ✅ Copier uniquement requirements.txt en premier
 # Cela permet de tirer parti du cache Docker si le code change mais pas les dépendances
 COPY ./requirements.txt ./
+COPY ./app/models/pipeline.pkl ./app/models/pipeline.pkl
+
 
 # ✅ Installer les dépendances Python
 RUN pip install --upgrade pip && \

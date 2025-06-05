@@ -35,6 +35,7 @@ services:
       - MYSQL_PASSWORD=kali
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   mysql_data:
