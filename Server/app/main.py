@@ -26,7 +26,7 @@ app = FastAPI(
 # Middleware de sécurité - Hosts autorisés
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "0.0.0.0", "*.votre-domaine.com"]
+    allowed_hosts=["localhost", "0.0.0.0", "*.votre-domaine.com", "*.onrender.com"]
 )
 
 # CORS sécurisé
@@ -36,7 +36,6 @@ app.add_middleware(
         "http://localhost:5173",  # Development
         "http://frontend:3000",  
         "http://localhost:3000",  # Alternative dev port
-        "https://votre-domaine.com",
         "*.onrender.com"  # Production
     ],
     allow_credentials=True,
