@@ -13,7 +13,7 @@ services:
       - key: PORT
         value: "8000"
       - key: DB_HOST
-        value: db
+        value: mysql-db
       - key: DB_PORT
         value: "3306"
       - key: DB_USER
@@ -23,7 +23,7 @@ services:
       - key: DB_NAME
         value: Data
       - key: DATABASE_URL
-        value: mysql+pymysql://mouha:kali@mysql:3306/Data
+        value: mysql+pymysql://mouha:kali@mysql:3306/data
       - key: API_PREFIX
         value: "/api/v1"
       - key: CORS_ORIGINS
