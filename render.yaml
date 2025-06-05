@@ -46,5 +46,5 @@ services:
 databases:
   - name: mysql-db
     plan: free
-    databaseName: Data
+    databaseName: data
     user: mouha
