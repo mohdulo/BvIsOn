@@ -1,18 +1,22 @@
+# render.yaml  (racine du dépôt)
 services:
-# ─────────────────── BACKEND ────────────────────
+  # ---------- BACKEND -------------
   - type: web
+    runtime: docker
     name: backend
-    env: docker
     plan: free
     repo: https://github.com/mohdulo/BvIsOn
     branch: docker-bis
     rootDir: Server
     dockerfilePath: ./Dockerfile
-    autoDeploy: true
     healthCheckPath: /
     envVars:
-      - key: DB_HOST
-        value: mysql          # ← nom du service ci-dessous
+      - key: PORT                     # port écouté par uvicorn
+        value: "8000"
+
+      # ---- connexion MySQL interne ----
+      - key: DB_HOST                  # **nom du service MySQL ci-dessous**
+        value: mysql
       - key: DB_PORT
         value: "3306"
       - key: DB_USER
@@ -21,33 +25,54 @@ services:
         value: kali
       - key: DB_NAME
         value: data
-      - key: DATABASE_URL
+      - key: DATABASE_URL             # même hôte que DB_HOST !
         value: mysql+pymysql://mouha:kali@mysql:3306/data
-      # … autres variables (JWT, CORS, etc.) …
 
-# ─────────────────── FRONTEND ────────────────────
+      # ---- autres variables d’app ----
+      - key: API_PREFIX
+        value: "/api/v1"
+      - key: CORS_ORIGINS
+        value: "https://frontend-qvkb.onrender.com"
+      - key: JWT_SECRET_KEY
+        value: f0eb1ae1d7cd39aafa9f311367f90a97...   # tronqué
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+
+  # ---------- FRONTEND -------------
   - type: web
+    runtime: docker
     name: frontend
-    env: docker
     plan: free
     repo: https://github.com/mohdulo/BvIsOn
     branch: docker-bis
     rootDir: Client
     dockerfilePath: ./Dockerfile
-    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL_ROOT
+        value: https://backend-mvsv.onrender.com
 
-# ─────────────────── MYSQL PRIVATE ───────────────
-  - type: private            # pas d'URL publique
-    name: mysql              # ← hostname interne: mysql
-    env: docker
-    image: mysql:8.0
+  # ---------- MySQL 8 privé --------
+  - type: pserv       # <- le bon mot-clé !
+    runtime: image    # on tire directement l’image officielle
+    name: mysql
+    image:
+      url: mysql:8.0
     plan: free
     envVars:
       - key: MYSQL_ROOT_PASSWORD
         value: kali
+      - key: MYSQL_DATABASE
+        value: data
       - key: MYSQL_USER
         value: mouha
       - key: MYSQL_PASSWORD
         value: kali
-      - key: MYSQL_DATABASE
-        value: data
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+
+# On n’utilise PAS la section `databases:`
+# (qui crée un Postgres managé, pas MySQL)
