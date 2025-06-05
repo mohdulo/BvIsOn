@@ -36,7 +36,8 @@ app.add_middleware(
         "http://localhost:5173",  # Development
         "http://frontend:3000",  
         "http://localhost:3000",  # Alternative dev port
-        "https://votre-domaine.com"  # Production
+        "https://votre-domaine.com",
+        "*.onrender.com"  # Production
     ],
     allow_credentials=True,
     allow_methods=["*"],
