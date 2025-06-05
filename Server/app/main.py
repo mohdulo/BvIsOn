@@ -34,12 +34,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # Development
-        "http://frontend:3000",  # Alternative dev port
+        "http://frontend:3000",  
+        "http://localhost:3000",  # Alternative dev port
         "https://votre-domaine.com"  # Production
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Middleware de logging des requêtes sécurisé

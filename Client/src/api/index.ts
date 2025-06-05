@@ -2,7 +2,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL_ROOT}/api/v1`,
+  baseURL: `${import.meta.env.VITE_API_URL_ROOT}`,
 });
 
 // ✅ Intercepteur de requête - Ajouter le token automatiquement
