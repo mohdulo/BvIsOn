@@ -3,10 +3,5 @@ services:
     name: fullstack-app
     env: docker
     plan: free
-    dockerfilePath: ./Dockerfile
-    repo: https://github.com/mohdulo/BvIsOn
-    branch: docker-bis
-    buildFilter:
-      paths:
-        - docker-compose.yaml
+    dockerComposeFilePath: ./docker-compose.yaml
     autoDeploy: true
