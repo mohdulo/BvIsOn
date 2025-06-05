@@ -69,10 +69,6 @@ services:
         value: mouha
       - key: MYSQL_PASSWORD
         value: kali
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
-
+    
 # On n’utilise PAS la section `databases:`
 # (qui crée un Postgres managé, pas MySQL)
