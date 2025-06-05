@@ -10,6 +10,8 @@ services:
     autoDeploy: true
     healthCheckPath: /
     envVars:
+      - key: PORT
+        value: "8000"
       - key: DB_HOST
         value: db
       - key: DB_PORT
