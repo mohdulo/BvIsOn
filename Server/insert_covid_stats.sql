@@ -1,4 +1,4 @@
--- SQL to create the table
+
 
 CREATE TABLE covid_stats (
     country VARCHAR(100),
@@ -20,7 +20,7 @@ CREATE TABLE covid_stats (
     date_timestamp BIGINT
 );
 
--- SQL INSERT statements
+
 INSERT INTO covid_stats VALUES ('afghanistan', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 'Asia', 179267.0, 7690.0, 162202.0, 9375.0, 1124.0, 951337.0, 40560636.0, 1579651200.0);
 INSERT INTO covid_stats VALUES ('afghanistan', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 'Asia', 179267.0, 7690.0, 162202.0, 9375.0, 1124.0, 951337.0, 40560636.0, 1579737600.0);
 INSERT INTO covid_stats VALUES ('afghanistan', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 'Asia', 179267.0, 7690.0, 162202.0, 9375.0, 1124.0, 951337.0, 40560636.0, 1579824000.0);
